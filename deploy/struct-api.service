@@ -1,0 +1,15 @@
+[Unit]
+Description=Struct Django API (Gunicorn)
+After=network.target postgresql.service
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/struct/backend
+EnvironmentFile=/var/www/struct/backend/.env
+ExecStart=/var/www/struct/backend/venv/bin/gunicorn struct_backend.wsgi:application -c deploy/gunicorn.conf.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

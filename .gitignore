@@ -1,0 +1,114 @@
+# ========================================
+# Environment & Secrets
+# ========================================
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+.env.test
+
+# ========================================
+# Node.js / React Frontend (struct-react)
+# ========================================
+struct-react/node_modules/
+struct-react/.pnp
+struct-react/.pnp.js
+struct-react/build/
+struct-react/dist/
+struct-react/.cache/
+struct-react/coverage/
+struct-react/npm-debug.log*
+struct-react/yarn-debug.log*
+struct-react/yarn-error.log*
+struct-react/.env.production
+
+# ========================================
+# Python / Django Backend
+# ========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+static/
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.venv*/
+
+# ========================================
+# Docker
+# ========================================
+.docker/
+.dockerignore
+
+# Volumes & data
+data/
+postgres-data/
+mysql-data/
+mongo-data/
+volumes/
+
+# ========================================
+# IDE & Editor
+# ========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ========================================
+# OS & Misc
+# ========================================
+*.log
+*.tmp
+*.temp
+*.bak
+*.orig
+
+# ========================================
+# Deployment / Build
+# ========================================
+*.war
+*.jar
+*.class
+
+# Certbot / Let's Encrypt
+certbot/
+letsencrypt/
+
+# If you have any local deployment scripts
+deploy/*.env
+deploy/secrets/
