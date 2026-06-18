@@ -82,6 +82,12 @@ export const api = {
       body: JSON.stringify({ template_name: templateName }),
     });
   },
+  createSystem(workspaceId, name) {
+  return request(`/workspaces/${workspaceId}/systems/`, {
+    method: 'POST',
+    body: JSON.stringify({ name }),
+  });
+},
 
   createRecord(tableId, data) {
     return request(`/tables/${tableId}/records/`, {

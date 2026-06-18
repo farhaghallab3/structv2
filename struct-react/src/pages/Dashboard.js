@@ -22,6 +22,7 @@ function Dashboard({ user, onLogout }) {
   const [systemList, setSystemList] = useState([]);
   const [systems, setSystems] = useState({});
   const [templates, setTemplates] = useState([]);
+  const [activities, setActivities] = useState([]);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -35,6 +36,7 @@ function Dashboard({ user, onLogout }) {
       setSystemList(buildSystemList(data.systems));
       setSystems(buildSystemsMap(data.systems));
       setTemplates(data.templates || []);
+      setActivities(data.activities || []);
       setSelectedSystem((prev) => prev || (data.systems.length > 0 ? data.systems[0].name : null));
     } catch (err) {
       showToast(err.message || 'Failed to load data');
@@ -67,6 +69,20 @@ function Dashboard({ user, onLogout }) {
       showToast(err.message || 'Install failed');
     }
   };
+  const handleCreateBlankSystem = async (name) => {
+  if (!workspace || !name) return;
+  try {
+    await api.createSystem(workspace.id, name);
+    showToast(`${name} created`);
+    closeModal();
+    setLoading(true);
+    await loadDashboard();
+    setSelectedSystem(name);
+    setCurrentView('system');
+  } catch (err) {
+    showToast(err.message || 'Create failed');
+  }
+};
 
   const openTemplatesGallery = () => {
     closeModal();
@@ -122,6 +138,7 @@ function Dashboard({ user, onLogout }) {
       <main className="main">
         {currentView === 'home' && (
           <Home 
+            activities={activities}
             systemList={systemList}
             onOpenSystem={(name) => {
               setSelectedSystem(name);

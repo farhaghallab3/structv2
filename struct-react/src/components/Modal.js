@@ -3,12 +3,19 @@ import React, { useEffect } from 'react';
 function Modal({ content, onClose, onOpenModal, showToast, onOpenTemplates, onInstallTemplate }) {
   useEffect(() => {
     if (!content) return;
-    
+
     const handleTemplateClick = (e) => {
+      if (e.target.closest('[data-action="create-blank"]')) {
+        const name = prompt('System name:');
+        if (name && window._createBlank) window._createBlank(name);
+        return;
+      }
+
       if (e.target.closest('[data-action="use-template"]')) {
         if (onOpenTemplates) {
           onOpenTemplates();
         }
+        return;
       }
 
       const installEl = e.target.closest('[data-template]');
@@ -39,7 +46,7 @@ function Modal({ content, onClose, onOpenModal, showToast, onOpenTemplates, onIn
 
   return (
     <div className="overlay" onClick={onClose}>
-      <div 
+      <div
         className={`modal ${content.small ? 'small' : ''}`}
         onClick={(e) => e.stopPropagation()}
       >
