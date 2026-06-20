@@ -698,9 +698,17 @@ td {
 /* ─── KPI Grid ─────────────────────────────────────── */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
   margin-bottom: 28px;
+}
+
+.kpi-card {
+  background: #0f0f0f;
+  border: 1px solid #1f1f1f;
+  border-radius: 14px;
+  padding: 20px 24px;
+  position: relative;
 }
 
 /* ─── Mobile Navigation Bar ─────────────────────────── */
@@ -848,8 +856,12 @@ td {
 /* ─── Phone ──────────────────────────────────────────── */
 @media (max-width: 540px) {
   .kpi-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 10px;
+  }
+
+  .kpi-card {
+    padding: 12px 14px;
   }
 
   .system-actions-row button {

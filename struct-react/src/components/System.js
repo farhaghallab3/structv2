@@ -400,7 +400,7 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
 
       <div className="kpi-grid">
         {kpis.map((kpi, i) => (
-          <div key={i} style={{background:'#0f0f0f', border:'1px solid #1f1f1f', borderRadius:'14px', padding:'20px 24px', position:'relative'}}
+          <div key={i} className="kpi-card"
             onMouseEnter={e => { const btn = e.currentTarget.querySelector('.kpi-edit-btn'); if(btn) btn.style.opacity='1'; }}
             onMouseLeave={e => { const btn = e.currentTarget.querySelector('.kpi-edit-btn'); if(editingKPIIdx !== i && btn) btn.style.opacity='0'; }}>
 
@@ -542,7 +542,7 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
         </div>
       )}
 
-      <div style={{background:'#0a0a0a', border:'1px solid #1a1a1a', borderRadius:'12px', overflow:'hidden'}}>
+      <div style={{background:'#0a0a0a', border:'1px solid #1a1a1a', borderRadius:'12px', overflowX:'auto'}}>
         <table style={{width:'100%', borderCollapse:'collapse'}}>
           <thead>
             <tr style={{borderBottom:'1px solid #1a1a1a'}}>
