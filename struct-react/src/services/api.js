@@ -102,6 +102,12 @@ export const api = {
       body: JSON.stringify({ data }),
     });
   },
+  updateColumns(tableId, columns) {
+  return request(`/tables/${tableId}/columns/`, {
+    method: 'PATCH',
+    body: JSON.stringify({ columns }),
+  });
+},
 
   deleteRecord(tableId, recordId) {
     return request(`/tables/${tableId}/records/${recordId}/`, {
