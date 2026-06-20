@@ -1,6 +1,6 @@
 import React from 'react';
 
-function Sidebar({ onToggleAccountMenu, onNavigate, onShowModal, onOpenTemplates, showToast, systemList, onOpenSystem, onLogout }) {
+function Sidebar({ onToggleAccountMenu, onNavigate, onShowModal, onOpenTemplates, showToast, systemList, onOpenSystem, onLogout, isOpen, onClose }) {
   const openCreateModal = () => {
     onShowModal(
       'Create',
@@ -25,9 +25,17 @@ function Sidebar({ onToggleAccountMenu, onNavigate, onShowModal, onOpenTemplates
   };
 
   return (
-    <aside className="side">
-      <div className="logo">STRUCT</div>
-      
+    <aside className={`side ${isOpen ? 'is-open' : ''}`}>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'28px'}}>
+        <div className="logo" style={{margin:0}}>STRUCT</div>
+        {onClose && (
+          <button onClick={onClose}
+            style={{background:'transparent', border:'none', color:'#666', fontSize:'20px', cursor:'pointer', padding:'4px 8px', lineHeight:'1'}}>
+            ✕
+          </button>
+        )}
+      </div>
+
       <nav className="nav">
         <a 
           className="active" 

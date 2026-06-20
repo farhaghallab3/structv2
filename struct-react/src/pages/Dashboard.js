@@ -23,6 +23,7 @@ function Dashboard({ user, onLogout }) {
   const [systems, setSystems] = useState({});
   const [templates, setTemplates] = useState([]);
   const [activities, setActivities] = useState([]);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -118,11 +119,24 @@ function Dashboard({ user, onLogout }) {
 
   return (
     <div className="shell">
-      <Sidebar 
+      {/* Mobile top bar */}
+      <div className="mobile-bar">
+        <div className="logo">STRUCT</div>
+        <button className="hamburger-btn" onClick={() => setSidebarOpen(true)}>☰</button>
+      </div>
+
+      {/* Sidebar overlay */}
+      <div className={`sidebar-overlay ${sidebarOpen ? 'is-open' : ''}`}
+        onClick={() => setSidebarOpen(false)} />
+
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
         onToggleAccountMenu={() => setShowAccountMenu(!showAccountMenu)}
         onNavigate={(view) => {
           setCurrentView(view);
           setShowAccountMenu(false);
+          setSidebarOpen(false);
         }}
         onShowModal={openModal}
         onOpenTemplates={openTemplatesGallery}
@@ -131,6 +145,7 @@ function Dashboard({ user, onLogout }) {
         onOpenSystem={(name) => {
           setSelectedSystem(name);
           setCurrentView('system');
+          setSidebarOpen(false);
         }}
         onLogout={handleLogoutClick}
       />

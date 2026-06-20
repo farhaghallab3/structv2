@@ -344,13 +344,13 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
     <section id="system" style={{padding:'32px 40px'}}>
       <div className="back" onClick={onBack} style={{marginBottom:'8px'}}>← Back to Systems</div>
 
-      <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'32px'}}>
+      <div className="system-top-row" style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'32px'}}>
         <div>
           <div style={{color:'#555', fontSize:'12px', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:'4px'}}>{workspaceName || 'Workspace'}</div>
           <h1 style={{fontSize:'32px', fontWeight:'700', margin:'0 0 4px 0', color:'#fff'}}>{systemName}</h1>
           <div style={{color:'#555', fontSize:'14px'}}>Smart operating table — manage, track, and execute work.</div>
         </div>
-        <div style={{display:'flex', gap:'10px', alignItems:'center'}}>
+        <div className="system-actions-row" style={{display:'flex', gap:'10px', alignItems:'center'}}>
           <button onClick={() => showToast('Reports coming soon')}
             style={{background:'#111', color:'#ccc', border:'1px solid #2a2a2a', padding:'10px 18px', borderRadius:'8px', cursor:'pointer', fontSize:'13px'}}>Reports</button>
           <button onClick={() => showToast('Export coming soon')}
@@ -364,13 +364,12 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
 
       {/* Table Navigation Tabs */}
       {systemData.allTables && systemData.allTables.length > 1 && (
-        <div style={{
+        <div className="table-tabs-bar" style={{
           display: 'flex',
           gap: '8px',
           borderBottom: '1px solid #1a1a1a',
           marginBottom: '28px',
           paddingBottom: '8px',
-          overflowX: 'auto'
         }}>
           {systemData.allTables.map((t, idx) => (
             <button key={t.id} onClick={() => setActiveTableIdx(idx)}
@@ -399,7 +398,7 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
         </div>
       )}
 
-      <div style={{display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'16px', marginBottom:'28px'}}>
+      <div className="kpi-grid">
         {kpis.map((kpi, i) => (
           <div key={i} style={{background:'#0f0f0f', border:'1px solid #1f1f1f', borderRadius:'14px', padding:'20px 24px', position:'relative'}}
             onMouseEnter={e => { const btn = e.currentTarget.querySelector('.kpi-edit-btn'); if(btn) btn.style.opacity='1'; }}
