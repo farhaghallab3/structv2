@@ -138,9 +138,17 @@ function renderCell(cell, header) {
 }
 
 function System({ systemName, systemData, workspaceName, onBack, onOpenModal, onShowDrawer, showToast }) {
-  const [rows, setRows] = useState(systemData.rows);
-  const [records, setRecords] = useState(systemData.records);
-  const [headers, setHeaders] = useState(systemData.headers);
+  const [activeTableIdx, setActiveTableIdx] = useState(0);
+  const [kpiConfigs, setKpiConfigs] = useState(null);
+  const [editingKPIIdx, setEditingKPIIdx] = useState(null);
+  const [kpiDraft, setKpiDraft] = useState(null);
+
+  const activeTable = systemData.allTables?.[activeTableIdx] || systemData.allTables?.[0];
+  const tableId = activeTable?.id || systemData.tableId;
+
+  const [rows, setRows] = useState(systemData.rows || []);
+  const [records, setRecords] = useState(systemData.records || []);
+  const [headers, setHeaders] = useState(systemData.headers || []);
   const [editingCell, setEditingCell] = useState(null);
   const [editValue, setEditValue] = useState('');
   const [editingHeader, setEditingHeader] = useState(null);
@@ -150,10 +158,44 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
   const [openMenu, setOpenMenu] = useState(null);
   const [colMenu, setColMenu] = useState(null);
 
-  const kpis = KPI_CONFIG[systemName] || [
-    { label: 'Total Records', field: headers[0], type: 'count', icon: '◈', color: '#3b82f6' },
-    { label: 'Unique', field: headers[1] || headers[0], type: 'unique', icon: '▤', color: '#22c55e' },
+  // Reset tab selection when switching systems
+  useEffect(() => {
+    setActiveTableIdx(0);
+    setEditingKPIIdx(null);
+  }, [systemName]);
+
+  // Load KPI configs from localStorage when system or table changes
+  useEffect(() => {
+    try {
+      const key = `kpi_${systemName}_${activeTableIdx}`;
+      const stored = localStorage.getItem(key);
+      setKpiConfigs(stored ? JSON.parse(stored) : null);
+      setEditingKPIIdx(null);
+    } catch { setKpiConfigs(null); }
+  }, [systemName, activeTableIdx]);
+
+  // Sync state variables with active table data
+  useEffect(() => {
+    if (activeTable) {
+      const hdrs = activeTable.columns || [];
+      const recs = activeTable.records || [];
+      setHeaders(hdrs);
+      setRecords(recs);
+      setRows(recs.map(record => hdrs.map(col => record.data?.[col] ?? '')));
+      setEditingCell(null);
+      setEditingHeader(null);
+      setActiveFilter('All');
+    }
+  }, [activeTable, systemData]);
+
+  const isMainTable = activeTableIdx === 0;
+  const defaultKPIs = (isMainTable && KPI_CONFIG[systemName]) || [
+    { label: 'Total Records', field: headers[0] || '', type: 'count', icon: '◈', color: '#3b82f6' },
+    { label: 'Unique Values', field: headers[0] || '', type: 'unique', icon: '▤', color: '#22c55e' },
+    { label: 'Total Sum', field: headers[1] || headers[0] || '', type: 'sum', icon: '$', color: '#f59e0b' },
+    { label: 'Filtered', field: headers[0] || '', type: 'filter', value: '', icon: '~', color: '#8b5cf6' },
   ];
+  const kpis = kpiConfigs && kpiConfigs.length > 0 ? kpiConfigs : defaultKPIs;
 
   const statusCol = headers.findIndex(h => h.toLowerCase() === 'status');
   const statusValues = statusCol >= 0 ? [...new Set(rows.map(r => r[statusCol]).filter(Boolean))] : [];
@@ -169,13 +211,14 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
     const handler = (e) => {
       if (!e.target.closest('.col-menu') && !e.target.closest('.col-header-btn')) setColMenu(null);
       if (!e.target.closest('.row-menu') && !e.target.closest('.row-menu-btn')) setOpenMenu(null);
+      if (!e.target.closest('.kpi-settings-panel') && !e.target.closest('.kpi-edit-btn')) setEditingKPIIdx(null);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   const saveColumns = async (newHeaders) => {
-    try { await api.updateColumns(systemData.tableId, newHeaders); }
+    try { await api.updateColumns(tableId, newHeaders); }
     catch { showToast('Failed to update columns'); }
   };
 
@@ -244,7 +287,7 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
     setEditingCell(null);
     try {
       const newData = { ...record.data, [header]: editValue };
-      await api.updateRecord(systemData.tableId, record.id, newData);
+      await api.updateRecord(tableId, record.id, newData);
       showToast('Saved');
     } catch {
       showToast('Save failed');
@@ -261,7 +304,7 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
     const record = records[rowIdx];
     if (!record) return;
     try {
-      await api.deleteRecord(systemData.tableId, record.id);
+      await api.deleteRecord(tableId, record.id);
       setRows(rows.filter((_, i) => i !== rowIdx));
       setRecords(records.filter((_, i) => i !== rowIdx));
       showToast('Deleted');
@@ -290,7 +333,7 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
         if (el) data[h] = el.value;
       });
       try {
-        await api.createRecord(systemData.tableId, data);
+        await api.createRecord(tableId, data);
         showToast('Record created!');
         window.location.reload();
       } catch { showToast('Failed to create record'); }
@@ -319,12 +362,139 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
         </div>
       </div>
 
+      {/* Table Navigation Tabs */}
+      {systemData.allTables && systemData.allTables.length > 1 && (
+        <div style={{
+          display: 'flex',
+          gap: '8px',
+          borderBottom: '1px solid #1a1a1a',
+          marginBottom: '28px',
+          paddingBottom: '8px',
+          overflowX: 'auto'
+        }}>
+          {systemData.allTables.map((t, idx) => (
+            <button key={t.id} onClick={() => setActiveTableIdx(idx)}
+              style={{
+                background: activeTableIdx === idx ? '#1a1a1a' : 'transparent',
+                color: activeTableIdx === idx ? '#fff' : '#666',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: activeTableIdx === idx ? '600' : '400',
+                transition: 'all 0.2s ease',
+                outline: 'none',
+                whiteSpace: 'nowrap'
+              }}
+              onMouseEnter={e => {
+                if (activeTableIdx !== idx) e.currentTarget.style.color = '#aaa';
+              }}
+              onMouseLeave={e => {
+                if (activeTableIdx !== idx) e.currentTarget.style.color = '#666';
+              }}>
+              {t.name}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div style={{display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'16px', marginBottom:'28px'}}>
         {kpis.map((kpi, i) => (
-          <div key={i} style={{background:'#0f0f0f', border:'1px solid #1f1f1f', borderRadius:'14px', padding:'20px 24px'}}>
+          <div key={i} style={{background:'#0f0f0f', border:'1px solid #1f1f1f', borderRadius:'14px', padding:'20px 24px', position:'relative'}}
+            onMouseEnter={e => { const btn = e.currentTarget.querySelector('.kpi-edit-btn'); if(btn) btn.style.opacity='1'; }}
+            onMouseLeave={e => { const btn = e.currentTarget.querySelector('.kpi-edit-btn'); if(editingKPIIdx !== i && btn) btn.style.opacity='0'; }}>
+
+            {/* Edit button */}
+            <button className="kpi-edit-btn"
+              onClick={e => { e.stopPropagation(); if(editingKPIIdx===i){setEditingKPIIdx(null);}else{setEditingKPIIdx(i);setKpiDraft({...kpi});} }}
+              style={{position:'absolute', top:'12px', right:'12px', background:'#1a1a1a', border:'1px solid #2a2a2a',
+                color:'#666', width:'24px', height:'24px', borderRadius:'6px', cursor:'pointer', fontSize:'11px',
+                opacity: editingKPIIdx===i ? '1' : '0', transition:'opacity 0.2s',
+                display:'flex', alignItems:'center', justifyContent:'center', padding:'0', lineHeight:'1'}}>
+              ✎
+            </button>
+
+            {/* Settings panel */}
+            {editingKPIIdx === i && kpiDraft && (
+              <div className="kpi-settings-panel" onClick={e => e.stopPropagation()}
+                style={{position:'absolute', top:'44px', right:'0', left:'0', background:'#141414',
+                  border:'1px solid #2a2a2a', borderRadius:'12px', padding:'16px', zIndex:500,
+                  boxShadow:'0 12px 32px rgba(0,0,0,0.85)'}}>
+                <div style={{fontSize:'11px', color:'#555', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'12px', fontWeight:'600'}}>Card Settings</div>
+
+                <div style={{marginBottom:'10px'}}>
+                  <div style={{fontSize:'11px', color:'#555', marginBottom:'4px'}}>Title</div>
+                  <input value={kpiDraft.label} onChange={e => setKpiDraft({...kpiDraft, label: e.target.value})}
+                    style={{width:'100%', background:'#0d0d0d', color:'#fff', border:'1px solid #2a2a2a',
+                      padding:'7px 10px', borderRadius:'6px', fontSize:'12px', outline:'none', boxSizing:'border-box'}} />
+                </div>
+
+                <div style={{marginBottom:'10px'}}>
+                  <div style={{fontSize:'11px', color:'#555', marginBottom:'4px'}}>Field</div>
+                  <select value={kpiDraft.field} onChange={e => setKpiDraft({...kpiDraft, field: e.target.value})}
+                    style={{width:'100%', background:'#0d0d0d', color:'#fff', border:'1px solid #2a2a2a',
+                      padding:'7px 10px', borderRadius:'6px', fontSize:'12px', outline:'none', boxSizing:'border-box'}}>
+                    {headers.map(h => <option key={h} value={h}>{h}</option>)}
+                  </select>
+                </div>
+
+                <div style={{marginBottom:'10px'}}>
+                  <div style={{fontSize:'11px', color:'#555', marginBottom:'4px'}}>Calculation</div>
+                  <select value={kpiDraft.type} onChange={e => setKpiDraft({...kpiDraft, type: e.target.value})}
+                    style={{width:'100%', background:'#0d0d0d', color:'#fff', border:'1px solid #2a2a2a',
+                      padding:'7px 10px', borderRadius:'6px', fontSize:'12px', outline:'none', boxSizing:'border-box'}}>
+                    <option value="count">Count (total rows)</option>
+                    <option value="sum">Sum (numeric)</option>
+                    <option value="unique">Unique values</option>
+                    <option value="filter">Filter equals</option>
+                  </select>
+                </div>
+
+                {kpiDraft.type === 'filter' && (
+                  <div style={{marginBottom:'10px'}}>
+                    <div style={{fontSize:'11px', color:'#555', marginBottom:'4px'}}>Match value</div>
+                    <input value={kpiDraft.value || ''} onChange={e => setKpiDraft({...kpiDraft, value: e.target.value})}
+                      placeholder="e.g. Active, Done..."
+                      style={{width:'100%', background:'#0d0d0d', color:'#fff', border:'1px solid #2a2a2a',
+                        padding:'7px 10px', borderRadius:'6px', fontSize:'12px', outline:'none', boxSizing:'border-box'}} />
+                  </div>
+                )}
+
+                <div style={{marginBottom:'14px'}}>
+                  <div style={{fontSize:'11px', color:'#555', marginBottom:'6px'}}>Color</div>
+                  <div style={{display:'flex', gap:'6px', flexWrap:'wrap'}}>
+                    {['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#f97316'].map(c => (
+                      <div key={c} onClick={() => setKpiDraft({...kpiDraft, color: c})}
+                        style={{width:'22px', height:'22px', borderRadius:'50%', background:c, cursor:'pointer',
+                          border: kpiDraft.color === c ? '2px solid #fff' : '2px solid transparent',
+                          boxSizing:'border-box', transition:'border 0.15s'}} />
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{display:'flex', gap:'8px'}}>
+                  <button onClick={() => {
+                    const base = kpiConfigs && kpiConfigs.length > 0 ? kpiConfigs : defaultKPIs;
+                    const newConfigs = base.map((k, idx) => idx === i ? kpiDraft : k);
+                    setKpiConfigs(newConfigs);
+                    localStorage.setItem(`kpi_${systemName}_${activeTableIdx}`, JSON.stringify(newConfigs));
+                    setEditingKPIIdx(null);
+                    showToast('Card updated');
+                  }} style={{flex:1, background:'#fff', color:'#000', border:'none', padding:'8px', borderRadius:'6px', cursor:'pointer', fontSize:'12px', fontWeight:'700'}}>
+                    Save
+                  </button>
+                  <button onClick={() => setEditingKPIIdx(null)}
+                    style={{flex:1, background:'transparent', color:'#666', border:'1px solid #2a2a2a', padding:'8px', borderRadius:'6px', cursor:'pointer', fontSize:'12px'}}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'12px'}}>
-              <div style={{color:'#666', fontSize:'11px', textTransform:'uppercase', letterSpacing:'0.08em'}}>{kpi.label}</div>
-              <div style={{background:kpi.color+'22', color:kpi.color, width:'30px', height:'30px', borderRadius:'8px',
+              <div style={{color:'#666', fontSize:'11px', textTransform:'uppercase', letterSpacing:'0.08em', paddingRight:'32px'}}>{kpi.label}</div>
+              <div style={{background:kpi.color+'22', color:kpi.color, width:'30px', height:'30px', borderRadius:'8px', flexShrink:0,
                 display:'flex', alignItems:'center', justifyContent:'center', fontSize:'14px', fontWeight:'700'}}>
                 {kpi.icon}
               </div>

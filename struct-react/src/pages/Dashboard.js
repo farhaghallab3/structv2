@@ -152,6 +152,7 @@ function Dashboard({ user, onLogout }) {
 
         {currentView === 'system' && activeSystemData && (
           <System 
+            key={selectedSystem}
             systemName={selectedSystem}
             systemData={activeSystemData}
             workspaceName={workspace?.name}
