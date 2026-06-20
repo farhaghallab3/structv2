@@ -492,7 +492,7 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
             )}
 
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'12px'}}>
-              <div style={{color:'#666', fontSize:'11px', textTransform:'uppercase', letterSpacing:'0.08em', paddingRight:'32px'}}>{kpi.label}</div>
+              <div style={{color:'#666', fontSize:'11px', textTransform:'uppercase', letterSpacing:'0.08em', paddingRight:'16px'}}>{kpi.label}</div>
               <div style={{background:kpi.color+'22', color:kpi.color, width:'30px', height:'30px', borderRadius:'8px', flexShrink:0,
                 display:'flex', alignItems:'center', justifyContent:'center', fontSize:'14px', fontWeight:'700'}}>
                 {kpi.icon}
