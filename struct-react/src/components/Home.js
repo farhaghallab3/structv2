@@ -1,7 +1,15 @@
 import React from 'react';
 
 function timeAgo(dateStr) {
-  const diff = Math.floor((new Date() - new Date(dateStr)) / 1000);
+  // Normalize Django timestamp format: "2026-06-20 19:54:52+00:00" → ISO 8601
+  // Some browsers fail to parse the space separator or +00:00 suffix correctly
+  const normalized = String(dateStr)
+    .replace(' ', 'T')           // space → T
+    .replace('+00:00', 'Z')      // +00:00 → Z (explicit UTC)
+    .replace(/\.\d+Z$/, 'Z');    // strip microseconds for safety
+
+  const diff = Math.floor((Date.now() - new Date(normalized).getTime()) / 1000);
+  if (isNaN(diff) || diff < 0) return 'Just now';
   if (diff < 60) return 'Just now';
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
