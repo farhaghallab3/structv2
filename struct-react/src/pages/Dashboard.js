@@ -85,6 +85,9 @@ function Dashboard({ user, onLogout }) {
   }
 };
 
+  // Expose to Modal's dangerouslySetInnerHTML handler
+  window._createBlank = handleCreateBlankSystem;
+
   const openTemplatesGallery = () => {
     closeModal();
     setTimeout(() => {
