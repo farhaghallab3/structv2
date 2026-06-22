@@ -240,6 +240,15 @@ def get_dashboard_data(request):
     if not workspace:
         return Response({'error': 'No workspace found'}, status=status.HTTP_404_NOT_FOUND)
 
+    # Ensure every system has at least one table (e.g. for existing blank systems)
+    for system in workspace.systems.all():
+        if not system.tables.exists():
+            Table.objects.create(
+                system=system,
+                name="Main Table",
+                columns=["Name", "Status", "Notes"]
+            )
+
     systems = workspace.systems.prefetch_related('tables__records').all()
     templates = Template.objects.all()
 
