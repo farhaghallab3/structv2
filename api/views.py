@@ -151,7 +151,14 @@ class SystemViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         workspace = Workspace.objects.get(owner=self.request.user, id=self.kwargs['workspace_id'])
-        serializer.save(workspace=workspace)
+        system = serializer.save(workspace=workspace)
+        # If no tables exist (e.g. creating a blank system), initialize a default table
+        if not system.tables.exists():
+            Table.objects.create(
+                system=system,
+                name="Main Table",
+                columns=["Name", "Status", "Notes"]
+            )
 
 
 class TableViewSet(viewsets.ModelViewSet):
