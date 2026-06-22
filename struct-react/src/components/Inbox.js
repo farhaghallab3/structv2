@@ -48,7 +48,7 @@ function Inbox({ showToast, onUnreadCountChange }) {
       if (onUnreadCountChange) {
         onUnreadCountChange(prev => Math.max(0, prev - 1));
       }
-    } catch {}
+    } catch { }
   };
 
   const handleMarkAll = async () => {
@@ -109,7 +109,7 @@ function Inbox({ showToast, onUnreadCountChange }) {
         <div className="inbox-empty">Loading...</div>
       ) : visible.length === 0 ? (
         <div className="inbox-empty">
-          <div className="inbox-empty-icon">📭</div>
+          <div className="inbox-empty-icon"></div>
           <div className="inbox-empty-text">
             {tab === 'unread' ? 'No unread notifications' : 'No notifications yet'}
           </div>
