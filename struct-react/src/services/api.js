@@ -114,6 +114,28 @@ export const api = {
       method: 'DELETE',
     });
   },
+
+  // ── Notifications ──────────────────────────────────────
+  getNotifications() {
+    return request('/notifications/');
+  },
+
+  getUnreadCount() {
+    return request('/notifications/unread_count/');
+  },
+
+  markNotificationRead(id) {
+    return request('/notifications/mark_as_read/', {
+      method: 'POST',
+      body: JSON.stringify({ id }),
+    });
+  },
+
+  markAllRead() {
+    return request('/notifications/mark_all_read/', {
+      method: 'POST',
+    });
+  },
 };
 
 export function systemToViewData(system) {

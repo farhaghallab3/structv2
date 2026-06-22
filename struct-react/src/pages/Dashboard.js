@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Sidebar from '../components/Sidebar';
 import Home from '../components/Home';
 import System from '../components/System';
+import Inbox from '../components/Inbox';
 import Modal from '../components/Modal';
 import Drawer from '../components/Drawer';
 import Toast from '../components/Toast';
@@ -24,6 +25,7 @@ function Dashboard({ user, onLogout }) {
   const [templates, setTemplates] = useState([]);
   const [activities, setActivities] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -49,6 +51,19 @@ function Dashboard({ user, onLogout }) {
   useEffect(() => {
     loadDashboard();
   }, [loadDashboard]);
+
+  // Poll unread notification count every 30 seconds
+  useEffect(() => {
+    const fetchCount = async () => {
+      try {
+        const data = await api.getUnreadCount();
+        setUnreadCount(data.count || 0);
+      } catch {}
+    };
+    fetchCount();
+    const interval = setInterval(fetchCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const openModal = (title, subtitle, body, small = false) => {
     setModalContent({ title, subtitle, body, small });
@@ -151,6 +166,7 @@ function Dashboard({ user, onLogout }) {
           setSidebarOpen(false);
         }}
         onLogout={handleLogoutClick}
+        unreadCount={unreadCount}
       />
 
       <main className="main">
@@ -165,6 +181,13 @@ function Dashboard({ user, onLogout }) {
             onOpenModal={openModal}
             showToast={showToast}
             onOpenTemplates={openTemplatesGallery}
+          />
+        )}
+
+        {currentView === 'inbox' && (
+          <Inbox
+            showToast={showToast}
+            onUnreadCountChange={setUnreadCount}
           />
         )}
 

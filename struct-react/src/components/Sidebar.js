@@ -1,6 +1,6 @@
 import React from 'react';
 
-function Sidebar({ onToggleAccountMenu, onNavigate, onShowModal, onOpenTemplates, showToast, systemList, onOpenSystem, onLogout, isOpen, onClose }) {
+function Sidebar({ onToggleAccountMenu, onNavigate, onShowModal, onOpenTemplates, showToast, systemList, onOpenSystem, onLogout, isOpen, onClose, unreadCount }) {
   const openCreateModal = () => {
     onShowModal(
       'Create',
@@ -97,8 +97,11 @@ function Sidebar({ onToggleAccountMenu, onNavigate, onShowModal, onOpenTemplates
 
       <nav className="nav" style={{ marginTop: '0' }}>
         <small style={{ margin: '0 0 8px' }}>Account</small>
-        <a onClick={() => showToast('Inbox')}>
-           Inbox
+        <a onClick={() => onNavigate('inbox')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span>Inbox</span>
+          {unreadCount > 0 && (
+            <span className="notif-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+          )}
         </a>
         <a onClick={() => onShowModal(
           'Templates',

@@ -202,7 +202,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def mark_as_read(self, request):
-        """Mark notification as read"""
+        """Mark a single notification as read"""
         notification_id = request.data.get('id')
         try:
             notification = Notification.objects.get(id=notification_id, user=request.user)
@@ -211,6 +211,18 @@ class NotificationViewSet(viewsets.ModelViewSet):
             return Response({'success': True})
         except Notification.DoesNotExist:
             return Response({'error': 'Notification not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=False, methods=['post'])
+    def mark_all_read(self, request):
+        """Mark all notifications as read"""
+        Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+        return Response({'success': True})
+
+    @action(detail=False, methods=['get'])
+    def unread_count(self, request):
+        """Return count of unread notifications"""
+        count = Notification.objects.filter(user=request.user, is_read=False).count()
+        return Response({'count': count})
 
 
 @api_view(['GET'])
