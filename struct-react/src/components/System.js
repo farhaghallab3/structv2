@@ -218,6 +218,10 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
   }, []);
 
   const saveColumns = async (newHeaders) => {
+    if (!tableId) {
+      showToast('No active table ID');
+      return;
+    }
     try { await api.updateColumns(tableId, newHeaders); }
     catch { showToast('Failed to update columns'); }
   };
@@ -285,6 +289,10 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
     );
     setRows(newRows);
     setEditingCell(null);
+    if (!tableId) {
+      showToast('No active table ID');
+      return;
+    }
     try {
       const newData = { ...record.data, [header]: editValue };
       await api.updateRecord(tableId, record.id, newData);
@@ -303,6 +311,10 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
   const handleDeleteRow = async (rowIdx) => {
     const record = records[rowIdx];
     if (!record) return;
+    if (!tableId) {
+      showToast('No active table ID');
+      return;
+    }
     try {
       await api.deleteRecord(tableId, record.id);
       setRows(rows.filter((_, i) => i !== rowIdx));
@@ -332,6 +344,10 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
         const el = document.getElementById(`field_${h.replace(/\s/g,'_')}`);
         if (el) data[h] = el.value;
       });
+      if (!tableId) {
+        showToast('No active table ID');
+        return;
+      }
       try {
         await api.createRecord(tableId, data);
         showToast('Record created!');

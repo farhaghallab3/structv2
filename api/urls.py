@@ -31,8 +31,10 @@ urlpatterns = [
     path('templates/<int:pk>/', views.TemplateViewSet.as_view({'get': 'retrieve'})),
 
     path('notifications/', views.NotificationViewSet.as_view({'get': 'list', 'post': 'create'})),
+    path('notifications/unread_count/', views.NotificationViewSet.as_view({'get': 'unread_count'})),
+    path('notifications/mark_as_read/', views.NotificationViewSet.as_view({'post': 'mark_as_read'})),
+    path('notifications/mark_all_read/', views.NotificationViewSet.as_view({'post': 'mark_all_read'})),
     path('notifications/<int:pk>/', views.NotificationViewSet.as_view({
         'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy',
     })),
-    path('notifications/mark-as-read/', views.NotificationViewSet.as_view({'post': 'mark_as_read'})),
 ]
