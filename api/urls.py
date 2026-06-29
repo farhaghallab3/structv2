@@ -21,4 +21,6 @@ urlpatterns = [
     path('notifications/mark_all_read/', views.NotificationViewSet.as_view({'post': 'mark_all_read'})),
     path('notifications/', views.NotificationViewSet.as_view({'get': 'list', 'post': 'create'})),
     path('notifications/<int:pk>/', views.NotificationViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'})),
+    # ── Agent ──────────────────────────────────────────────
+    path('systems/<int:system_id>/agent/', views.agent_run, name='agent-run'),
 ]

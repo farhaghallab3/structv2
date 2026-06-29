@@ -145,6 +145,14 @@ export const api = {
       method: 'POST',
     });
   },
+
+  // ── Agent ──────────────────────────────────────────────
+  runAgent(systemId, message, actionType = 'chat') {
+    return request(`/systems/${systemId}/agent/`, {
+      method: 'POST',
+      body: JSON.stringify({ message, action_type: actionType }),
+    });
+  },
 };
 
 export function systemToViewData(system) {

@@ -256,12 +256,22 @@ def get_dashboard_data(request):
         'workspace': WorkspaceSerializer(workspace).data,
         'systems': SystemSerializer(systems, many=True).data,
         'templates': TemplateSerializer(templates, many=True).data,
-        'activities': [
-            {
-                'action': a.action,
-                'system_name': a.system_name,
-                'detail': a.detail,
-                'created_at': str(a.created_at)
-            } for a in ActivityLog.objects.filter(workspace=workspace)[:20]
-        ],
+        'activities': [],
     }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def agent_run(request, system_id):
+    """Run the Struct Agent on a system."""
+    from .agent import run_agent
+    message = request.data.get('message', '')
+    action_type = request.data.get('action_type', 'chat')
+
+    valid_actions = ['analyze', 'report', 'organize', 'improve', 'build', 'chat']
+    if action_type not in valid_actions:
+        action_type = 'chat'
+
+    result = run_agent(system_id, request.user, message, action_type)
+    return Response(result, status=status.HTTP_200_OK)
+

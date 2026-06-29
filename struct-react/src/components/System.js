@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
+import AgentPanel from './AgentPanel';
 
 const KPI_CONFIG = {
   'CRM': [
@@ -148,6 +149,7 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
   const [editValue, setEditValue] = useState('');
   const [editingHeader, setEditingHeader] = useState(null);
   const [headerValue, setHeaderValue] = useState('');
+  const [showAgent, setShowAgent] = useState(false);
 
   const activeTable = systemData.allTables?.[activeTableIdx] || systemData.allTables?.[0];
   const tableId = activeTable?.id || systemData.tableId;
@@ -389,6 +391,16 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
           <button onClick={openNewRecord}
             style={{background:'#fff', color:'#000', border:'none', padding:'10px 20px', borderRadius:'8px', cursor:'pointer', fontSize:'13px', fontWeight:'700', display: isViewOnly ? 'none' : ''}}>
             + New Record
+          </button>
+          <button onClick={() => setShowAgent(true)}
+            style={{
+              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              color: '#fff', border: 'none',
+              padding: '10px 18px', borderRadius: '8px',
+              cursor: 'pointer', fontSize: '13px', fontWeight: '700',
+              display: 'flex', alignItems: 'center', gap: '6px',
+            }}>
+            ✦ Agent
           </button>
         </div>
       </div>
@@ -725,6 +737,13 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
             </div>
           </div>
         </div>
+      )}
+      {showAgent && (
+        <AgentPanel
+          systemId={systemData.id}
+          systemName={systemName}
+          onClose={() => setShowAgent(false)}
+        />
       )}
     </section>
   );
