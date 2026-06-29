@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
+import AcceptInvite from './pages/AcceptInvite';
 import { api } from './services/api';
 import './index.css';
 
@@ -39,18 +40,11 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route 
-          path="/login" 
-          element={isAuthenticated ? <Navigate to="/" /> : <Login onLogin={handleLogin} />} 
-        />
-        <Route 
-          path="/signup" 
-          element={isAuthenticated ? <Navigate to="/" /> : <Signup onSignup={handleLogin} />} 
-        />
-        <Route 
-          path="/" 
-          element={isAuthenticated ? <Dashboard user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} 
-        />
+        <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login onLogin={handleLogin} />} />
+        <Route path="/signup" element={isAuthenticated ? <Navigate to="/" /> : <Signup onSignup={handleLogin} />} />
+        <Route path="/invite/:token" element={<AcceptInvite onLogin={handleLogin} />} />
+        <Route path="/s/:systemName" element={isAuthenticated ? <Dashboard user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
+        <Route path="/" element={isAuthenticated ? <Dashboard user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} />
       </Routes>
     </Router>
   );

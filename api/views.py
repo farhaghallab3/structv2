@@ -256,4 +256,12 @@ def get_dashboard_data(request):
         'workspace': WorkspaceSerializer(workspace).data,
         'systems': SystemSerializer(systems, many=True).data,
         'templates': TemplateSerializer(templates, many=True).data,
+        'activities': [
+            {
+                'action': a.action,
+                'system_name': a.system_name,
+                'detail': a.detail,
+                'created_at': str(a.created_at)
+            } for a in ActivityLog.objects.filter(workspace=workspace)[:20]
+        ],
     }, status=status.HTTP_200_OK)

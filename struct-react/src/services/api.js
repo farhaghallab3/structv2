@@ -102,6 +102,15 @@ export const api = {
       body: JSON.stringify({ data }),
     });
   },
+  inviteMember(workspaceId, email, role, systemName = '', systemId = null) {
+    return request(`/workspaces/${workspaceId}/invite/`, { method: 'POST', body: JSON.stringify({ email, role, system_name: systemName, system_id: systemId }) });
+  },
+  listMembers(workspaceId, systemId = null) {
+    return request(`/workspaces/${workspaceId}/members/${systemId ? '?system_id='+systemId : ''}`);
+  },
+  createTable(systemId, name, columns) {
+    return request(`/systems/${systemId}/tables/`, { method: 'POST', body: JSON.stringify({ name, columns }) });
+  },
   updateColumns(tableId, columns) {
   return request(`/tables/${tableId}/columns/`, {
     method: 'PATCH',
@@ -151,6 +160,8 @@ export function systemToViewData(system) {
   );
 
   return {
+    id: system.id,
+    userRole: system.user_role || 'owner',
     tables: system.tables.map((t) => t.name),
     headers,
     rows,

@@ -60,11 +60,11 @@ function parseNum(val) {
   return parseFloat(String(val).replace(/[^0-9.]/g, '')) || 0;
 }
 
-function calcKPI(records, headers, kpi) {
+function calcKPI(rows, headers, kpi) {
   const idx = headers.indexOf(kpi.field);
-  if (idx === -1) return '—';
-  const vals = records.map(r => r[idx]);
-  if (kpi.type === 'count') return records.length;
+  if (idx === -1) return kpi.type === 'count' ? rows.length : '—';
+  const vals = rows.map(r => r[idx]);
+  if (kpi.type === 'count') return rows.length;
   if (kpi.type === 'sum') {
     const total = vals.reduce((a, b) => a + parseNum(b), 0);
     return total > 999 ? `${(total/1000).toFixed(1)}K` : total.toLocaleString();
@@ -88,14 +88,11 @@ function toHref(cell) {
 function renderCell(cell, header) {
   if (!cell && cell !== 0) return cell;
   const lh = (header || '').toLowerCase();
-
-  // Link column or link value
   if (lh.includes('link') || lh.includes('url') || isLink(cell)) {
     const domain = String(cell).replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
     return (
       <a href={toHref(cell)} target="_blank" rel="noreferrer"
-        style={{color:'#3b82f6', display:'inline-flex', alignItems:'center', gap:'6px',
-          textDecoration:'none', fontSize:'13px'}}
+        style={{color:'#3b82f6', display:'inline-flex', alignItems:'center', gap:'6px', textDecoration:'none', fontSize:'13px'}}
         onClick={e => e.stopPropagation()}>
         <span style={{background:'#3b82f622', border:'1px solid #3b82f644', width:'22px', height:'22px',
           borderRadius:'5px', display:'inline-flex', alignItems:'center', justifyContent:'center',
@@ -104,13 +101,9 @@ function renderCell(cell, header) {
       </a>
     );
   }
-
-  // Time column
   if (lh.includes('time') || lh.includes('duration')) {
     return <span style={{color:'#888', fontFamily:'monospace'}}>{cell}</span>;
   }
-
-  // Platform icon
   const platform = PLATFORM_ICONS[cell];
   if (platform) {
     return (
@@ -122,8 +115,6 @@ function renderCell(cell, header) {
       </span>
     );
   }
-
-  // Status badge
   if (STATUS_COLORS[cell]) {
     return (
       <span style={{background:STATUS_COLORS[cell]+'18', color:STATUS_COLORS[cell],
@@ -133,38 +124,42 @@ function renderCell(cell, header) {
       </span>
     );
   }
-
   return cell;
 }
 
 function System({ systemName, systemData, workspaceName, onBack, onOpenModal, onShowDrawer, showToast }) {
+  const isViewOnly = systemData.userRole === 'view';
   const [activeTableIdx, setActiveTableIdx] = useState(0);
   const [kpiConfigs, setKpiConfigs] = useState(null);
   const [editingKPIIdx, setEditingKPIIdx] = useState(null);
   const [kpiDraft, setKpiDraft] = useState(null);
-
-  const activeTable = systemData.allTables?.[activeTableIdx] || systemData.allTables?.[0];
-  const tableId = activeTable?.id || systemData.tableId;
-
-  const [rows, setRows] = useState(systemData.rows || []);
-  const [records, setRecords] = useState(systemData.records || []);
-  const [headers, setHeaders] = useState(systemData.headers || []);
+  const [showAddCard, setShowAddCard] = useState(false);
+  const [newCardDraft, setNewCardDraft] = useState({ label: 'New Card', field: '', type: 'count', icon: '◈', color: '#3b82f6' });
+  const [showColConfig, setShowColConfig] = useState(false);
+  const [configColIdx, setConfigColIdx] = useState(null);
+  const [configColName, setConfigColName] = useState('');
+  const [configColType, setConfigColType] = useState('text');
+  const [filterCol, setFilterCol] = useState('');
+  const [activeFilter, setActiveFilter] = useState('All');
+  const [filterText, setFilterText] = useState('');
+  const [openMenu, setOpenMenu] = useState(null);
+  const [colMenu, setColMenu] = useState(null);
   const [editingCell, setEditingCell] = useState(null);
   const [editValue, setEditValue] = useState('');
   const [editingHeader, setEditingHeader] = useState(null);
   const [headerValue, setHeaderValue] = useState('');
-  const [filterText, setFilterText] = useState('');
-  const [activeFilter, setActiveFilter] = useState('All');
-  const [openMenu, setOpenMenu] = useState(null);
-  const [colMenu, setColMenu] = useState(null);
 
-  // Reset tab selection when switching systems
+  const activeTable = systemData.allTables?.[activeTableIdx] || systemData.allTables?.[0];
+  const tableId = activeTable?.id || systemData.tableId;
+  const [rows, setRows] = useState(systemData.rows || []);
+  const [records, setRecords] = useState(systemData.records || []);
+  const [headers, setHeaders] = useState(systemData.headers || []);
+
   useEffect(() => {
     setActiveTableIdx(0);
     setEditingKPIIdx(null);
   }, [systemName]);
 
-  // Load KPI configs from localStorage when system or table changes
   useEffect(() => {
     try {
       const key = `kpi_${systemName}_${activeTableIdx}`;
@@ -174,7 +169,6 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
     } catch { setKpiConfigs(null); }
   }, [systemName, activeTableIdx]);
 
-  // Sync state variables with active table data
   useEffect(() => {
     if (activeTable) {
       const hdrs = activeTable.columns || [];
@@ -185,26 +179,23 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
       setEditingCell(null);
       setEditingHeader(null);
       setActiveFilter('All');
+      setFilterCol('');
     }
   }, [activeTable, systemData]);
 
   const isMainTable = activeTableIdx === 0;
-  const defaultKPIs = (isMainTable && KPI_CONFIG[systemName]) || [
-    { label: 'Total Records', field: headers[0] || '', type: 'count', icon: '◈', color: '#3b82f6' },
-    { label: 'Unique Values', field: headers[0] || '', type: 'unique', icon: '▤', color: '#22c55e' },
-    { label: 'Total Sum', field: headers[1] || headers[0] || '', type: 'sum', icon: '$', color: '#f59e0b' },
-    { label: 'Filtered', field: headers[0] || '', type: 'filter', value: '', icon: '~', color: '#8b5cf6' },
-  ];
+  const hasTemplate = !!(isMainTable && KPI_CONFIG[systemName]);
+  const defaultKPIs = hasTemplate ? KPI_CONFIG[systemName] : [];
   const kpis = kpiConfigs && kpiConfigs.length > 0 ? kpiConfigs : defaultKPIs;
 
-  const statusCol = headers.findIndex(h => h.toLowerCase() === 'status');
-  const statusValues = statusCol >= 0 ? [...new Set(rows.map(r => r[statusCol]).filter(Boolean))] : [];
-  const filterOptions = ['All', ...statusValues];
-
+  const activeFilterCol = filterCol || (headers.find(h => h.toLowerCase() === 'status') || headers[0] || '');
+  const filterColIdx = headers.findIndex(h => h === activeFilterCol);
+  const filterValues = filterColIdx >= 0 ? [...new Set(rows.map(r => r[filterColIdx]).filter(Boolean))] : [];
+  const filterOptions = ['All', ...filterValues];
   const filteredRows = rows.filter(row => {
-    const matchesStatus = activeFilter === 'All' || (statusCol >= 0 && row[statusCol] === activeFilter);
+    const matchesFilter = activeFilter === 'All' || (filterColIdx >= 0 && row[filterColIdx] === activeFilter);
     const matchesText = !filterText || row.some(cell => String(cell).toLowerCase().includes(filterText.toLowerCase()));
-    return matchesStatus && matchesText;
+    return matchesFilter && matchesText;
   });
 
   useEffect(() => {
@@ -219,7 +210,13 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
 
   const saveColumns = async (newHeaders) => {
     if (!tableId) {
-      showToast('No active table ID');
+      try {
+        const systemId = systemData.id;
+        if (!systemId) { showToast('No system ID'); return; }
+        await api.createTable(systemId, 'Main Table', newHeaders);
+        showToast('Table created!');
+        window.location.reload();
+      } catch { showToast('Failed to create table'); }
       return;
     }
     try { await api.updateColumns(tableId, newHeaders); }
@@ -232,10 +229,52 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
     setColMenu({ idx, x: rect.left, y: rect.bottom + window.scrollY });
   };
 
-  const handleRename = () => {
-    setEditingHeader(colMenu.idx);
-    setHeaderValue(headers[colMenu.idx]);
+  const handleAddColumn = () => {
     setColMenu(null);
+    setConfigColIdx(null);
+    setConfigColName('');
+    setConfigColType('text');
+    setShowColConfig(true);
+  };
+
+  const handleEditColumn = () => {
+    const idx = colMenu.idx;
+    setColMenu(null);
+    setConfigColIdx(idx);
+    setConfigColName(headers[idx]);
+    setConfigColType('text');
+    setShowColConfig(true);
+  };
+
+  const saveColConfig = async () => {
+    if (!configColName.trim()) return;
+    let newHeaders, newRows;
+    if (configColIdx === null) {
+      newHeaders = [...headers, configColName.trim()];
+      newRows = rows.map(row => [...row, '']);
+    } else {
+      newHeaders = headers.map((h, i) => i === configColIdx ? configColName.trim() : h);
+      newRows = rows;
+    }
+    setHeaders(newHeaders);
+    setRows(newRows);
+    await saveColumns(newHeaders);
+    setShowColConfig(false);
+    showToast(configColIdx === null ? 'Column added' : 'Column updated');
+  };
+
+  const handleDeleteColumn = async () => {
+    const idx = colMenu ? colMenu.idx : configColIdx;
+    setColMenu(null);
+    setShowColConfig(false);
+    if (headers.length <= 1) { showToast('Cannot delete last column'); return; }
+    if (!window.confirm(`Delete column "${headers[idx]}"?`)) return;
+    const newHeaders = headers.filter((_, i) => i !== idx);
+    const newRows = rows.map(row => row.filter((_, i) => i !== idx));
+    setHeaders(newHeaders);
+    setRows(newRows);
+    await saveColumns(newHeaders);
+    showToast('Column deleted');
   };
 
   const saveHeader = async (colIdx) => {
@@ -247,34 +286,9 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
     showToast('Column renamed');
   };
 
-  const handleAddColumn = async () => {
-    const idx = colMenu ? colMenu.idx : headers.length - 1;
-    setColMenu(null);
-    const name = prompt('New column name:');
-    if (!name) return;
-    const newHeaders = [...headers.slice(0, idx+1), name, ...headers.slice(idx+1)];
-    const newRows = rows.map(row => [...row.slice(0, idx+1), '', ...row.slice(idx+1)]);
-    setHeaders(newHeaders);
-    setRows(newRows);
-    await saveColumns(newHeaders);
-    showToast('Column added');
-  };
-
-  const handleDeleteColumn = async () => {
-    const idx = colMenu.idx;
-    setColMenu(null);
-    if (headers.length <= 1) { showToast('Cannot delete last column'); return; }
-    if (!window.confirm(`Delete column "${headers[idx]}"?`)) return;
-    const newHeaders = headers.filter((_, i) => i !== idx);
-    const newRows = rows.map(row => row.filter((_, i) => i !== idx));
-    setHeaders(newHeaders);
-    setRows(newRows);
-    await saveColumns(newHeaders);
-    showToast('Column deleted');
-  };
-
   const startEdit = (e, rowIdx, cellIdx, value) => {
     e.stopPropagation();
+    if (isViewOnly) return;
     setEditingCell({ rowIdx, cellIdx });
     setEditValue(value);
     setOpenMenu(null);
@@ -289,10 +303,7 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
     );
     setRows(newRows);
     setEditingCell(null);
-    if (!tableId) {
-      showToast('No active table ID');
-      return;
-    }
+    if (!tableId) { showToast('No active table ID'); return; }
     try {
       const newData = { ...record.data, [header]: editValue };
       await api.updateRecord(tableId, record.id, newData);
@@ -311,10 +322,7 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
   const handleDeleteRow = async (rowIdx) => {
     const record = records[rowIdx];
     if (!record) return;
-    if (!tableId) {
-      showToast('No active table ID');
-      return;
-    }
+    if (!tableId) { showToast('No active table ID'); return; }
     try {
       await api.deleteRecord(tableId, record.id);
       setRows(rows.filter((_, i) => i !== rowIdx));
@@ -344,10 +352,7 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
         const el = document.getElementById(`field_${h.replace(/\s/g,'_')}`);
         if (el) data[h] = el.value;
       });
-      if (!tableId) {
-        showToast('No active table ID');
-        return;
-      }
+      if (!tableId) { showToast('No active table ID'); return; }
       try {
         await api.createRecord(tableId, data);
         showToast('Record created!');
@@ -356,10 +361,18 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
     };
   };
 
+  const saveKpi = (i) => {
+    const base = kpiConfigs && kpiConfigs.length > 0 ? kpiConfigs : defaultKPIs;
+    const newConfigs = base.map((k, idx) => idx === i ? kpiDraft : k);
+    setKpiConfigs(newConfigs);
+    localStorage.setItem(`kpi_${systemName}_${activeTableIdx}`, JSON.stringify(newConfigs));
+    setEditingKPIIdx(null);
+    showToast('Card updated');
+  };
+
   return (
     <section id="system" style={{padding:'32px 40px'}}>
       <div className="back" onClick={onBack} style={{marginBottom:'8px'}}>← Back to Systems</div>
-
       <div className="system-top-row" style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'32px'}}>
         <div>
           <div style={{color:'#555', fontSize:'12px', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:'4px'}}>{workspaceName || 'Workspace'}</div>
@@ -367,47 +380,26 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
           <div style={{color:'#555', fontSize:'14px'}}>Smart operating table — manage, track, and execute work.</div>
         </div>
         <div className="system-actions-row" style={{display:'flex', gap:'10px', alignItems:'center'}}>
+          <button onClick={() => onOpenModal('Share Access', 'Invite people to this workspace.', '__INVITE__')}
+            style={{background:'#111', color:'#ccc', border:'1px solid #2a2a2a', padding:'10px 18px', borderRadius:'8px', cursor:'pointer', fontSize:'13px'}}>Share</button>
           <button onClick={() => showToast('Reports coming soon')}
             style={{background:'#111', color:'#ccc', border:'1px solid #2a2a2a', padding:'10px 18px', borderRadius:'8px', cursor:'pointer', fontSize:'13px'}}>Reports</button>
           <button onClick={() => showToast('Export coming soon')}
             style={{background:'#111', color:'#ccc', border:'1px solid #2a2a2a', padding:'10px 18px', borderRadius:'8px', cursor:'pointer', fontSize:'13px'}}>Export</button>
           <button onClick={openNewRecord}
-            style={{background:'#fff', color:'#000', border:'none', padding:'10px 20px', borderRadius:'8px', cursor:'pointer', fontSize:'13px', fontWeight:'700'}}>
+            style={{background:'#fff', color:'#000', border:'none', padding:'10px 20px', borderRadius:'8px', cursor:'pointer', fontSize:'13px', fontWeight:'700', display: isViewOnly ? 'none' : ''}}>
             + New Record
           </button>
         </div>
       </div>
 
-      {/* Table Navigation Tabs */}
       {systemData.allTables && systemData.allTables.length > 1 && (
-        <div className="table-tabs-bar" style={{
-          display: 'flex',
-          gap: '8px',
-          borderBottom: '1px solid #1a1a1a',
-          marginBottom: '28px',
-          paddingBottom: '8px',
-        }}>
+        <div style={{display:'flex', gap:'8px', borderBottom:'1px solid #1a1a1a', marginBottom:'28px', paddingBottom:'8px'}}>
           {systemData.allTables.map((t, idx) => (
             <button key={t.id} onClick={() => setActiveTableIdx(idx)}
-              style={{
-                background: activeTableIdx === idx ? '#1a1a1a' : 'transparent',
-                color: activeTableIdx === idx ? '#fff' : '#666',
-                border: 'none',
-                padding: '8px 16px',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '13px',
-                fontWeight: activeTableIdx === idx ? '600' : '400',
-                transition: 'all 0.2s ease',
-                outline: 'none',
-                whiteSpace: 'nowrap'
-              }}
-              onMouseEnter={e => {
-                if (activeTableIdx !== idx) e.currentTarget.style.color = '#aaa';
-              }}
-              onMouseLeave={e => {
-                if (activeTableIdx !== idx) e.currentTarget.style.color = '#666';
-              }}>
+              style={{background: activeTableIdx===idx ? '#1a1a1a' : 'transparent', color: activeTableIdx===idx ? '#fff' : '#666',
+                border:'none', padding:'8px 16px', borderRadius:'8px', cursor:'pointer', fontSize:'13px',
+                fontWeight: activeTableIdx===idx ? '600' : '400'}}>
               {t.name}
             </button>
           ))}
@@ -419,32 +411,24 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
           <div key={i} className="kpi-card"
             onMouseEnter={e => { const btn = e.currentTarget.querySelector('.kpi-edit-btn'); if(btn) btn.style.opacity='1'; }}
             onMouseLeave={e => { const btn = e.currentTarget.querySelector('.kpi-edit-btn'); if(editingKPIIdx !== i && btn) btn.style.opacity='0'; }}>
-
-            {/* Edit button */}
             <button className="kpi-edit-btn"
               onClick={e => { e.stopPropagation(); if(editingKPIIdx===i){setEditingKPIIdx(null);}else{setEditingKPIIdx(i);setKpiDraft({...kpi});} }}
               style={{position:'absolute', top:'12px', right:'12px', background:'#1a1a1a', border:'1px solid #2a2a2a',
                 color:'#666', width:'24px', height:'24px', borderRadius:'6px', cursor:'pointer', fontSize:'11px',
                 opacity: editingKPIIdx===i ? '1' : '0', transition:'opacity 0.2s',
-                display:'flex', alignItems:'center', justifyContent:'center', padding:'0', lineHeight:'1'}}>
-              ✎
-            </button>
-
-            {/* Settings panel */}
+                display:'flex', alignItems:'center', justifyContent:'center', padding:'0', lineHeight:'1'}}>✎</button>
             {editingKPIIdx === i && kpiDraft && (
               <div className="kpi-settings-panel" onClick={e => e.stopPropagation()}
                 style={{position:'absolute', top:'44px', right:'0', left:'0', background:'#141414',
                   border:'1px solid #2a2a2a', borderRadius:'12px', padding:'16px', zIndex:500,
                   boxShadow:'0 12px 32px rgba(0,0,0,0.85)'}}>
                 <div style={{fontSize:'11px', color:'#555', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'12px', fontWeight:'600'}}>Card Settings</div>
-
                 <div style={{marginBottom:'10px'}}>
                   <div style={{fontSize:'11px', color:'#555', marginBottom:'4px'}}>Title</div>
                   <input value={kpiDraft.label} onChange={e => setKpiDraft({...kpiDraft, label: e.target.value})}
                     style={{width:'100%', background:'#0d0d0d', color:'#fff', border:'1px solid #2a2a2a',
                       padding:'7px 10px', borderRadius:'6px', fontSize:'12px', outline:'none', boxSizing:'border-box'}} />
                 </div>
-
                 <div style={{marginBottom:'10px'}}>
                   <div style={{fontSize:'11px', color:'#555', marginBottom:'4px'}}>Field</div>
                   <select value={kpiDraft.field} onChange={e => setKpiDraft({...kpiDraft, field: e.target.value})}
@@ -453,7 +437,6 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
                     {headers.map(h => <option key={h} value={h}>{h}</option>)}
                   </select>
                 </div>
-
                 <div style={{marginBottom:'10px'}}>
                   <div style={{fontSize:'11px', color:'#555', marginBottom:'4px'}}>Calculation</div>
                   <select value={kpiDraft.type} onChange={e => setKpiDraft({...kpiDraft, type: e.target.value})}
@@ -465,7 +448,6 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
                     <option value="filter">Filter equals</option>
                   </select>
                 </div>
-
                 {kpiDraft.type === 'filter' && (
                   <div style={{marginBottom:'10px'}}>
                     <div style={{fontSize:'11px', color:'#555', marginBottom:'4px'}}>Match value</div>
@@ -475,84 +457,77 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
                         padding:'7px 10px', borderRadius:'6px', fontSize:'12px', outline:'none', boxSizing:'border-box'}} />
                   </div>
                 )}
-
                 <div style={{marginBottom:'14px'}}>
                   <div style={{fontSize:'11px', color:'#555', marginBottom:'6px'}}>Color</div>
                   <div style={{display:'flex', gap:'6px', flexWrap:'wrap'}}>
                     {['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#f97316'].map(c => (
                       <div key={c} onClick={() => setKpiDraft({...kpiDraft, color: c})}
                         style={{width:'22px', height:'22px', borderRadius:'50%', background:c, cursor:'pointer',
-                          border: kpiDraft.color === c ? '2px solid #fff' : '2px solid transparent',
-                          boxSizing:'border-box', transition:'border 0.15s'}} />
+                          border: kpiDraft.color===c ? '2px solid #fff' : '2px solid transparent', boxSizing:'border-box'}} />
                     ))}
                   </div>
                 </div>
-
                 <div style={{display:'flex', gap:'8px'}}>
-                  <button onClick={() => {
-                    const base = kpiConfigs && kpiConfigs.length > 0 ? kpiConfigs : defaultKPIs;
-                    const newConfigs = base.map((k, idx) => idx === i ? kpiDraft : k);
-                    setKpiConfigs(newConfigs);
-                    localStorage.setItem(`kpi_${systemName}_${activeTableIdx}`, JSON.stringify(newConfigs));
-                    setEditingKPIIdx(null);
-                    showToast('Card updated');
-                  }} style={{flex:1, background:'#fff', color:'#000', border:'none', padding:'8px', borderRadius:'6px', cursor:'pointer', fontSize:'12px', fontWeight:'700'}}>
-                    Save
-                  </button>
+                  <button onClick={() => saveKpi(i)}
+                    style={{flex:1, background:'#fff', color:'#000', border:'none', padding:'8px', borderRadius:'6px', cursor:'pointer', fontSize:'12px', fontWeight:'700'}}>Save</button>
                   <button onClick={() => setEditingKPIIdx(null)}
-                    style={{flex:1, background:'transparent', color:'#666', border:'1px solid #2a2a2a', padding:'8px', borderRadius:'6px', cursor:'pointer', fontSize:'12px'}}>
-                    Cancel
-                  </button>
+                    style={{flex:1, background:'transparent', color:'#666', border:'1px solid #2a2a2a', padding:'8px', borderRadius:'6px', cursor:'pointer', fontSize:'12px'}}>Cancel</button>
                 </div>
               </div>
             )}
-
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'12px'}}>
               <div style={{color:'#666', fontSize:'11px', textTransform:'uppercase', letterSpacing:'0.08em', paddingRight:'16px'}}>{kpi.label}</div>
               <div style={{background:kpi.color+'22', color:kpi.color, width:'30px', height:'30px', borderRadius:'8px', flexShrink:0,
-                display:'flex', alignItems:'center', justifyContent:'center', fontSize:'14px', fontWeight:'700'}}>
-                {kpi.icon}
-              </div>
+                display:'flex', alignItems:'center', justifyContent:'center', fontSize:'14px', fontWeight:'700'}}>{kpi.icon}</div>
             </div>
             <div style={{color:'#fff', fontSize:'30px', fontWeight:'700', marginBottom:'6px'}}>{calcKPI(rows, headers, kpi)}</div>
             <div style={{color:'#444', fontSize:'12px'}}>from {rows.length} active records</div>
           </div>
         ))}
+        <div onClick={() => { setNewCardDraft({ label: 'New Card', field: headers[0] || '', type: 'count', icon: '◈', color: '#3b82f6' }); setShowAddCard(true); }}
+          style={{display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
+            border:'1px dashed #2a2a2a', borderRadius:'12px', minHeight:'120px', color:'#444',
+            fontSize:'24px', background:'transparent', transition:'border-color 0.2s'}}
+          onMouseEnter={e => e.currentTarget.style.borderColor='#555'}
+          onMouseLeave={e => e.currentTarget.style.borderColor='#2a2a2a'}>+</div>
       </div>
 
-      <div style={{display:'flex', alignItems:'center', gap:'8px', marginBottom:'16px', flexWrap:'wrap'}}>
-        {filterOptions.map(opt => (
-          <button key={opt} onClick={() => setActiveFilter(opt)}
-            style={{background:activeFilter===opt?'#fff':'#111', color:activeFilter===opt?'#000':'#777',
-              border:'1px solid '+(activeFilter===opt?'#fff':'#222'),
-              padding:'5px 16px', borderRadius:'20px', fontSize:'13px', cursor:'pointer',
-              fontWeight:activeFilter===opt?'600':'400'}}>
-            {opt}
-          </button>
-        ))}
-        <div style={{marginLeft:'auto'}}>
-          <input placeholder="Search..." value={filterText} onChange={e => setFilterText(e.target.value)}
-            style={{background:'#111', color:'#fff', border:'1px solid #222', padding:'6px 14px',
-              borderRadius:'8px', fontSize:'13px', outline:'none', width:'180px'}} />
+      {headers.length > 0 && (
+        <div style={{display:'flex', alignItems:'center', gap:'8px', marginBottom:'16px', flexWrap:'wrap'}}>
+          <select value={activeFilterCol} onChange={e => { setFilterCol(e.target.value); setActiveFilter('All'); }}
+            style={{background:'#111', color:'#777', border:'1px solid #222', padding:'5px 12px',
+              borderRadius:'20px', fontSize:'13px', cursor:'pointer', outline:'none'}}>
+            {headers.map(h => <option key={h} value={h}>{h}</option>)}
+          </select>
+          {filterOptions.map(opt => (
+            <button key={opt} onClick={() => setActiveFilter(opt)}
+              style={{background:activeFilter===opt?'#fff':'#111', color:activeFilter===opt?'#000':'#777',
+                border:'1px solid '+(activeFilter===opt?'#fff':'#222'),
+                padding:'5px 16px', borderRadius:'20px', fontSize:'13px', cursor:'pointer',
+                fontWeight:activeFilter===opt?'600':'400'}}>
+              {opt}
+            </button>
+          ))}
+          <div style={{marginLeft:'auto'}}>
+            <input placeholder="Search..." value={filterText} onChange={e => setFilterText(e.target.value)}
+              style={{background:'#111', color:'#fff', border:'1px solid #222', padding:'6px 14px',
+                borderRadius:'8px', fontSize:'13px', outline:'none', width:'180px'}} />
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Column dropdown menu - fixed position */}
       {colMenu && (
         <div className="col-menu" style={{position:'fixed', left:colMenu.x, top:colMenu.y,
           background:'#161616', border:'1px solid #2a2a2a', borderRadius:'10px', zIndex:9999,
           minWidth:'160px', overflow:'hidden', boxShadow:'0 8px 24px rgba(0,0,0,0.6)'}}>
-          <div onClick={handleRename}
-            style={{padding:'10px 16px', cursor:'pointer', color:'#ccc', fontSize:'13px'}}
+          <div onClick={handleEditColumn} style={{padding:'10px 16px', cursor:'pointer', color:'#ccc', fontSize:'13px'}}
             onMouseEnter={e => e.currentTarget.style.background='#222'}
-            onMouseLeave={e => e.currentTarget.style.background='transparent'}>✎ Rename</div>
-          <div onClick={handleAddColumn}
-            style={{padding:'10px 16px', cursor:'pointer', color:'#ccc', fontSize:'13px'}}
+            onMouseLeave={e => e.currentTarget.style.background='transparent'}>✎ Edit Column</div>
+          <div onClick={handleAddColumn} style={{padding:'10px 16px', cursor:'pointer', color:'#ccc', fontSize:'13px'}}
             onMouseEnter={e => e.currentTarget.style.background='#222'}
-            onMouseLeave={e => e.currentTarget.style.background='transparent'}>+ Add Column After</div>
+            onMouseLeave={e => e.currentTarget.style.background='transparent'}>+ Add Column</div>
           <div style={{height:'1px', background:'#222'}}></div>
-          <div onClick={handleDeleteColumn}
-            style={{padding:'10px 16px', cursor:'pointer', color:'#ef4444', fontSize:'13px'}}
+          <div onClick={handleDeleteColumn} style={{padding:'10px 16px', cursor:'pointer', color:'#ef4444', fontSize:'13px'}}
             onMouseEnter={e => e.currentTarget.style.background='#222'}
             onMouseLeave={e => e.currentTarget.style.background='transparent'}>Delete Column</div>
         </div>
@@ -659,6 +634,109 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
         </table>
       </div>
       <div style={{color:'#333', fontSize:'12px', marginTop:'10px'}}>All figures compared to previous period</div>
+
+      {showColConfig && (
+        <div className="overlay" onClick={() => setShowColConfig(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth:'400px'}}>
+            <div className="modal-head">
+              <div><h2>{configColIdx === null ? 'Add Column' : 'Edit Column'}</h2><div className="sub">Configure column settings</div></div>
+              <button className="close" onClick={() => setShowColConfig(false)}>Close</button>
+            </div>
+            <div style={{padding:'8px 0'}}>
+              <div style={{marginBottom:'16px'}}>
+                <div style={{color:'#666', fontSize:'11px', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'8px'}}>Column Name</div>
+                <input autoFocus value={configColName} onChange={e => setConfigColName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && saveColConfig()}
+                  placeholder="e.g. Status, Owner, Due Date"
+                  style={{width:'100%', background:'#0d0d0d', color:'#fff', border:'1px solid #2a2a2a',
+                    padding:'10px 12px', borderRadius:'8px', fontSize:'14px', outline:'none', boxSizing:'border-box'}}/>
+              </div>
+              <div style={{marginBottom:'24px'}}>
+                <div style={{color:'#666', fontSize:'11px', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'8px'}}>Column Type</div>
+                <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px'}}>
+                  {[['text','📝 Text'],['number','🔢 Number'],['date','📅 Date'],['status','🏷 Status'],['dropdown','▾ Dropdown'],['link','🔗 Link']].map(([val, label]) => (
+                    <button key={val} onClick={() => setConfigColType(val)}
+                      style={{background: configColType===val ? '#fff' : '#111', color: configColType===val ? '#000' : '#777',
+                        border:'1px solid '+(configColType===val?'#fff':'#222'), padding:'10px', borderRadius:'8px',
+                        fontSize:'13px', cursor:'pointer', textAlign:'left'}}>{label}</button>
+                  ))}
+                </div>
+              </div>
+              <div style={{display:'flex', gap:'8px'}}>
+                {configColIdx !== null && (
+                  <button onClick={handleDeleteColumn}
+                    style={{background:'#ef444418', color:'#ef4444', border:'1px solid #ef444433',
+                      padding:'10px 20px', borderRadius:'8px', fontSize:'14px', cursor:'pointer'}}>Delete</button>
+                )}
+                <button onClick={saveColConfig}
+                  style={{flex:1, background:'#fff', color:'#000', border:'none',
+                    padding:'10px', borderRadius:'8px', fontSize:'14px', fontWeight:'700', cursor:'pointer'}}>
+                  {configColIdx === null ? 'Add Column' : 'Save Changes'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAddCard && (
+        <div className="overlay" onClick={() => setShowAddCard(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth:'420px'}}>
+            <div className="modal-head">
+              <div><h2>Add Card</h2><div className="sub">Choose what this card shows</div></div>
+              <button className="close" onClick={() => setShowAddCard(false)}>Close</button>
+            </div>
+            <div style={{padding:'8px 0'}}>
+              <div style={{marginBottom:'16px'}}>
+                <div style={{color:'#666', fontSize:'11px', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'8px'}}>Card Title</div>
+                <input value={newCardDraft.label} onChange={e => setNewCardDraft({...newCardDraft, label: e.target.value})}
+                  style={{width:'100%', background:'#0d0d0d', color:'#fff', border:'1px solid #2a2a2a',
+                    padding:'10px 12px', borderRadius:'8px', fontSize:'14px', outline:'none', boxSizing:'border-box'}}/>
+              </div>
+              <div style={{marginBottom:'16px'}}>
+                <div style={{color:'#666', fontSize:'11px', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'8px'}}>Column</div>
+                <select value={newCardDraft.field} onChange={e => setNewCardDraft({...newCardDraft, field: e.target.value})}
+                  style={{width:'100%', background:'#0d0d0d', color:'#fff', border:'1px solid #2a2a2a',
+                    padding:'10px 12px', borderRadius:'8px', fontSize:'14px', outline:'none'}}>
+                  {headers.length > 0 ? headers.map(h => <option key={h} value={h}>{h}</option>) : <option value="">No columns yet</option>}
+                </select>
+              </div>
+              <div style={{marginBottom:'24px'}}>
+                <div style={{color:'#666', fontSize:'11px', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'8px'}}>Calculation</div>
+                <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px'}}>
+                  {[['count','Count (total rows)'],['sum','Sum'],['unique','Unique Values'],['filter','Filtered Count']].map(([val, label]) => (
+                    <button key={val} onClick={() => setNewCardDraft({...newCardDraft, type: val})}
+                      style={{background: newCardDraft.type===val ? '#fff' : '#111', color: newCardDraft.type===val ? '#000' : '#777',
+                        border:'1px solid '+(newCardDraft.type===val?'#fff':'#222'), padding:'10px', borderRadius:'8px',
+                        fontSize:'13px', cursor:'pointer'}}>{label}</button>
+                  ))}
+                </div>
+              </div>
+              <div style={{marginBottom:'24px'}}>
+                <div style={{color:'#666', fontSize:'11px', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'8px'}}>Color</div>
+                <div style={{display:'flex', gap:'8px'}}>
+                  {['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#f97316'].map(c => (
+                    <div key={c} onClick={() => setNewCardDraft({...newCardDraft, color: c})}
+                      style={{width:'28px', height:'28px', borderRadius:'50%', background:c, cursor:'pointer',
+                        border: newCardDraft.color===c ? '3px solid #fff' : '3px solid transparent'}}/>
+                  ))}
+                </div>
+              </div>
+              <button onClick={() => {
+                  const newKpis = [...kpis, newCardDraft];
+                  setKpiConfigs(newKpis);
+                  localStorage.setItem(`kpi_${systemName}_${activeTableIdx}`, JSON.stringify(newKpis));
+                  setShowAddCard(false);
+                  showToast('Card added');
+                }}
+                style={{width:'100%', background:'#fff', color:'#000', border:'none',
+                  padding:'12px', borderRadius:'8px', fontSize:'14px', fontWeight:'700', cursor:'pointer'}}>
+                Add Card
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

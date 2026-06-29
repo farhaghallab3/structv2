@@ -2,26 +2,7 @@ import React from 'react';
 
 function Sidebar({ onToggleAccountMenu, onNavigate, onShowModal, onOpenTemplates, showToast, systemList, onOpenSystem, onLogout, isOpen, onClose, unreadCount }) {
   const openCreateModal = () => {
-    onShowModal(
-      'Create',
-      'Start with a blank smart table, a template, or AI.',
-      `<div class="options">
-        <div class="option" onclick="alert('Blank Smart Table created')">
-          <h3>Blank Smart Table</h3>
-          <p>Define columns, statuses, owners, and rules manually.</p>
-        </div>
-        <div class="option" data-action="use-template" style="cursor: pointer;">
-          <h3>Use Template</h3>
-          <p>Install CRM, Cost, Campaigns, Meetings, VSM, Cash Flow, and more.</p>
-        </div>
-        <div class="option" onclick="alert('AI Builder placeholder')">
-          <h3>Build with AI</h3>
-          <p>Describe your work and Struct builds fields, rows, reports, and logic.</p>
-        </div>
-      </div>`,
-      false,
-      onOpenTemplates
-    );
+    onShowModal('Create', '', '__CREATE__');
   };
 
   return (

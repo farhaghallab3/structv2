@@ -12,7 +12,7 @@ function timeAgo(dateStr) {
 }
 
 const TYPE_ICON = {
-  inbox: '📬',
+  inbox: '✉',
   alert: '⚠️',
   mention: '@',
 };
@@ -126,7 +126,7 @@ function Inbox({ showToast, onUnreadCountChange }) {
               onClick={() => handleMarkRead(n)}
             >
               <div className="notif-icon">
-                {TYPE_ICON[n.notification_type] || '🔔'}
+                {TYPE_ICON[n.notification_type] || '·'}
               </div>
               <div className="notif-body">
                 <div className="notif-title">{n.title}</div>
