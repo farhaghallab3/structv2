@@ -891,40 +891,53 @@ td {
     border-radius: 16px;
   }
 
-  /* ── Mobile Table: ALL columns visible, no horizontal scroll ── */
+  /* ── Mobile Table: smooth horizontal scroll ── */
   .table-scroll-wrap {
-    overflow-x: visible;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    /* subtle scroll indicator */
+    border-radius: 12px;
   }
 
   .table-scroll-wrap table {
-    min-width: unset !important;
-    width: 100%;
-    table-layout: fixed;
+    min-width: 520px !important;
+    width: max-content;
   }
 
-  /* Compact all cells so everything fits */
   .table-scroll-wrap th,
   .table-scroll-wrap td {
-    padding: 8px 4px !important;
-    font-size: 11px !important;
+    padding: 10px 10px !important;
+    font-size: 12px !important;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 0;
   }
 
-  /* Icon/action column (✎) - very small */
   .table-scroll-wrap th:first-child,
   .table-scroll-wrap td:first-child {
-    width: 22px !important;
-    padding: 8px 2px !important;
+    padding: 10px 6px !important;
   }
 
-  /* Last action column (⋮ / +) stays compact */
   .table-scroll-wrap th:last-child,
   .table-scroll-wrap td:last-child {
-    width: 28px !important;
-    padding: 8px 2px !important;
+    padding: 10px 6px !important;
+  }
+
+  /* ── Table Tabs: horizontal scroll, no wrap ── */
+  .table-tabs-bar {
+    display: flex !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap !important;
+    gap: 4px;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+
+  .table-tabs-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .table-tabs-bar button {
+    flex-shrink: 0 !important;
   }
 }
 
