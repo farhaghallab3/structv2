@@ -393,18 +393,7 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
         </div>
       </div>
 
-      {systemData.allTables && systemData.allTables.length > 1 && (
-        <div className="table-tabs-bar" style={{display:'flex', gap:'8px', borderBottom:'1px solid #1a1a1a', marginBottom:'28px', paddingBottom:'8px'}}>
-          {systemData.allTables.map((t, idx) => (
-            <button key={t.id} onClick={() => setActiveTableIdx(idx)}
-              style={{background: activeTableIdx===idx ? '#1a1a1a' : 'transparent', color: activeTableIdx===idx ? '#fff' : '#666',
-                border:'none', padding:'8px 16px', borderRadius:'8px', cursor:'pointer', fontSize:'13px',
-                fontWeight: activeTableIdx===idx ? '600' : '400'}}>
-              {t.name}
-            </button>
-          ))}
-        </div>
-      )}
+
 
       <div className="kpi-grid">
         {kpis.map((kpi, i) => (
