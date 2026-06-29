@@ -373,6 +373,12 @@ table {
   min-width: 900px;
 }
 
+/* Mobile table wrapper - no horizontal scroll */
+.table-scroll-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 th {
   font-size: 11px;
   color: var(--muted2);
@@ -883,6 +889,42 @@ td {
   .auth-form {
     padding: 28px 20px;
     border-radius: 16px;
+  }
+
+  /* ── Mobile Table: ALL columns visible, no horizontal scroll ── */
+  .table-scroll-wrap {
+    overflow-x: visible;
+  }
+
+  .table-scroll-wrap table {
+    min-width: unset !important;
+    width: 100%;
+    table-layout: fixed;
+  }
+
+  /* Compact all cells so everything fits */
+  .table-scroll-wrap th,
+  .table-scroll-wrap td {
+    padding: 8px 4px !important;
+    font-size: 11px !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 0;
+  }
+
+  /* Icon/action column (✎) - very small */
+  .table-scroll-wrap th:first-child,
+  .table-scroll-wrap td:first-child {
+    width: 22px !important;
+    padding: 8px 2px !important;
+  }
+
+  /* Last action column (⋮ / +) stays compact */
+  .table-scroll-wrap th:last-child,
+  .table-scroll-wrap td:last-child {
+    width: 28px !important;
+    padding: 8px 2px !important;
   }
 }
 

@@ -533,8 +533,8 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
         </div>
       )}
 
-      <div style={{background:'#0a0a0a', border:'1px solid #1a1a1a', borderRadius:'12px', overflowX:'auto'}}>
-        <table style={{width:'100%', borderCollapse:'collapse'}}>
+      <div className="table-scroll-wrap" style={{background:'#0a0a0a', border:'1px solid #1a1a1a', borderRadius:'12px'}}>
+        <table style={{borderCollapse:'collapse'}}>
           <thead>
             <tr style={{borderBottom:'1px solid #1a1a1a'}}>
               <th style={{width:'40px'}}></th>
