@@ -81,6 +81,7 @@ function Dashboard({ user, onLogout }) {
   };
 
   const openModal = (title, subtitle, body, small = false) => {
+    setSidebarOpen(false);
     if (body === '__INVITE__') { setShowInvite(true); return; }
     if (body === '__CREATE__') { setShowCreate(true); return; }
     setModalContent({ title, subtitle, body, small });
