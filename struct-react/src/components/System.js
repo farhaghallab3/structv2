@@ -663,7 +663,7 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
                 <td></td>
                 {headers.map((h, i) => {
                   const lh = h.toLowerCase();
-                  const isSkip = lh.includes('time') || lh.includes('link') || lh.includes('url') || lh.includes('duration');
+                  const isSkip = lh.includes('time') || lh.includes('link') || lh.includes('url') || lh.includes('duration') || lh.includes('date') || lh.includes('day') || lh.includes('month') || lh.includes('year') || lh.includes('id') || lh.includes('status') || lh.includes('owner') || lh.includes('person');
                   const vals = rows.map(r => parseFloat(String(r[i]).replace(/[^0-9.]/g,'')));
                   const isNum = !isSkip && vals.some(v => !isNaN(v) && v > 0);
                   const total = vals.reduce((a,b) => a+(isNaN(b)?0:b), 0);
