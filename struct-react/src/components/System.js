@@ -774,6 +774,14 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
           systemName={systemName}
           onClose={() => setShowAgent(false)}
           showToast={showToast}
+          onOpenReport={(html, title) => {
+            onShowDrawer(
+              <div style={{padding: '30px', color: '#111'}}>
+                <h2 style={{borderBottom: '1px solid #eee', paddingBottom: '16px', marginBottom: '24px'}}>{title} Report</h2>
+                <div className="report-content" dangerouslySetInnerHTML={{ __html: html }} style={{lineHeight: '1.6'}} />
+              </div>
+            );
+          }}
         />
       )}
     </section>
