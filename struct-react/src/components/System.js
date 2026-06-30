@@ -596,10 +596,11 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
                     />
                   ) : (
                     <button className="col-header-btn" onClick={(e) => handleColMenuOpen(e, i)}
-                      style={{background:'none', border:'none', cursor:'pointer', color:'#444',
-                        fontSize:'11px', textTransform:'uppercase', letterSpacing:'0.08em', fontWeight:'500',
-                        display:'flex', alignItems:'center', gap:'4px', padding:'0'}}>
-                      {h} <span style={{opacity:0.5}}>▾</span>
+                      style={{background:'none', border:'none', cursor:'pointer', color:'#555',
+                        fontSize:'12px', letterSpacing:'0.03em', fontWeight:'600',
+                        display:'flex', alignItems:'center', gap:'6px', padding:'0',
+                        maxWidth: '250px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textTransform: 'capitalize'}}>
+                      <span style={{overflow:'hidden', textOverflow:'ellipsis'}}>{h}</span> <span style={{opacity:0.4}}>▾</span>
                     </button>
                   )}
                 </th>
@@ -612,13 +613,14 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
           </thead>
           <tbody>
             {filteredRows.map((row, rowIdx) => (
-              <tr key={rowIdx} style={{borderBottom:'1px solid #111'}}
-                onMouseEnter={e => e.currentTarget.style.background='#0f0f0f'}
+              <tr key={rowIdx} style={{borderBottom:'1px solid #141414', transition: 'background 0.2s'}}
+                onMouseEnter={e => e.currentTarget.style.background='#131313'}
                 onMouseLeave={e => e.currentTarget.style.background='transparent'}>
                 <td style={{textAlign:'center', color:'#333', cursor:'pointer', fontSize:'13px', padding:'14px 8px'}}
                   onClick={(e) => startEdit(e, rowIdx, 0, row[0])}>✎</td>
                 {row.map((cell, cellIdx) => (
-                  <td key={cellIdx} style={{padding:'14px 16px', fontSize:'14px', color:'#ccc', cursor:'pointer'}}
+                  <td key={cellIdx} style={{padding:'14px 16px', fontSize:'14px', color:'#ccc', cursor:'pointer',
+                    maxWidth: '400px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '1.5'}}
                     onClick={(e) => startEdit(e, rowIdx, cellIdx, cell)}>
                     {editingCell?.rowIdx===rowIdx && editingCell?.cellIdx===cellIdx ? (
                       <input autoFocus value={editValue}
