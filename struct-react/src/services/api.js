@@ -147,6 +147,9 @@ export const api = {
   },
 
   // ── Agent ──────────────────────────────────────────────
+  agentApply(systemId, actions) {
+    return request(`/systems/${systemId}/agent/apply/`, { method: 'POST', body: JSON.stringify({ actions }) });
+  },
   runAgent(systemId, message, actionType = 'chat') {
     return request(`/systems/${systemId}/agent/`, {
       method: 'POST',
