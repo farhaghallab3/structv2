@@ -339,6 +339,7 @@ function AgentPanel({ systemId, systemName, systemData, onClose, onOpenReport, s
               Clear & start over
             </button>
           )}
+          <div style={{background:'#111', border:'1px solid #1e1e1e', borderRadius:'14px', overflow:'hidden'}}>
             {attachedFile && (
               <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 14px', background:'#1a1a2e', borderBottom:'1px solid #161616', color:'#a5b4fc', fontSize:'12px'}}>
                 <div style={{display:'flex', alignItems:'center', gap:'6px'}}>
