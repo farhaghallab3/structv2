@@ -68,31 +68,37 @@ function AgentPanel({ systemId, systemName, systemData, onClose, onOpenReport, s
 
     try {
       const res = await api.runAgent(systemId, msg, activeAction || 'chat', attachedFile);
-      if (res.success) {
+
+      // Server returns {summary, findings, proposed_actions, report_html}
+      if (res.summary !== undefined || res.findings !== undefined || res.proposed_actions !== undefined) {
+        setResult({
+          text: res.summary || '',
+          findings: res.findings || [],
+          proposed_actions: res.proposed_actions || [],
+          summary: res.summary || '',
+          suggestions: []
+        });
+        setReportHtml(res.report_html || null);
+        setAttachedFile(null);
+        setPhase('result');
+      } else if (res.error) {
+        setResult({ error: res.error });
+        setPhase('result');
+      } else if (res.success) {
+        // Legacy format fallback
         let text = res.response || '';
         let acts = res.suggested_actions || [];
         let reportData = null;
-
         if (text.includes('```html')) {
           const match = text.match(/```html([\s\S]*?)```/);
-          if (match) {
-            reportData = match[1].trim();
-            text = text.replace(/```html[\s\S]*?```/, '').trim();
-          }
+          if (match) { reportData = match[1].trim(); text = text.replace(/```html[\s\S]*?```/, '').trim(); }
         }
-
-        setResult({
-          text,
-          findings: res.findings || [],
-          proposed_actions: acts,
-          summary: res.summary || '',
-          suggestions: res.suggestions || []
-        });
+        setResult({ text, findings: res.findings || [], proposed_actions: acts, summary: res.summary || '', suggestions: [] });
         setReportHtml(reportData);
         setAttachedFile(null);
         setPhase('result');
       } else {
-        setResult({ error: res.error || 'Agent failed' });
+        setResult({ error: 'Agent returned unexpected response' });
         setPhase('result');
       }
     } catch (err) {
