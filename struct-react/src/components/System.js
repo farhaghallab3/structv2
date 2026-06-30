@@ -405,9 +405,39 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
         </div>
       </div>
 
-
-
-      <div className="kpi-grid">
+      <div className="table-tabs" style={{display:'flex', gap:'8px', marginBottom:'24px', overflowX:'auto', paddingBottom:'4px'}}>
+        {systemData.allTables?.map((t, idx) => (
+          <button key={t.id || idx} onClick={() => setActiveTableIdx(idx)}
+            style={{
+              background: activeTableIdx === idx ? '#fff' : '#111',
+              color: activeTableIdx === idx ? '#000' : '#888',
+              border: `1px solid ${activeTableIdx === idx ? '#fff' : '#222'}`,
+              padding: '8px 16px', borderRadius: '8px', cursor: 'pointer',
+              fontSize: '13px', fontWeight: activeTableIdx === idx ? '600' : '400',
+              whiteSpace: 'nowrap'
+            }}>
+            {t.name}
+          </button>
+        ))}
+        {!isViewOnly && (
+          <button onClick={() => {
+            const name = prompt('New table name:');
+            if (name) {
+              import('../services/api').then(({api}) => {
+                api.createTable(systemData.id, name, ['Name'])
+                  .then(() => window.location.reload())
+                  .catch(() => showToast('Failed to create table'));
+              });
+            }
+          }} style={{
+            background: 'transparent', color: '#666', border: '1px dashed #333',
+            padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px',
+            display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap'
+          }}>
+            + New Table
+          </button>
+        )}
+      </div>      <div className="kpi-grid">
         {kpis.map((kpi, i) => (
           <div key={i} className="kpi-card"
             onMouseEnter={e => { const btn = e.currentTarget.querySelector('.kpi-edit-btn'); if(btn) btn.style.opacity='1'; }}
