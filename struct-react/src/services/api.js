@@ -167,7 +167,7 @@ export const api = {
 export function systemToViewData(system) {
   const mainTable = system.tables?.[0];
   if (!mainTable) {
-    return { tables: [], headers: [], rows: [], tableId: null, records: [] };
+    return { id: system.id, tables: [], headers: [], rows: [], tableId: null, records: [], allTables: [] };
   }
 
   const headers = mainTable.columns || [];
