@@ -150,10 +150,16 @@ export const api = {
   agentApply(systemId, actions) {
     return request(`/systems/${systemId}/agent/apply/`, { method: 'POST', body: JSON.stringify({ actions }) });
   },
-  runAgent(systemId, message, actionType = 'chat') {
+  runAgent(systemId, message, actionType = 'chat', file = null) {
+    const body = { message, action_type: actionType };
+    if (file) {
+      body.file_name = file.name;
+      body.file_type = file.type;
+      body.file_data = file.data;
+    }
     return request(`/systems/${systemId}/agent/`, {
       method: 'POST',
-      body: JSON.stringify({ message, action_type: actionType }),
+      body: JSON.stringify(body),
     });
   },
 };

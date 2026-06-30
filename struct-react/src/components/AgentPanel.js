@@ -36,7 +36,9 @@ function AgentPanel({ systemId, systemName, systemData, onClose, onOpenReport, s
   const [result, setResult]             = useState(() => getSaved().result || null);
   const [applied, setApplied]           = useState(() => getSaved().applied || []);
   const [reportHtml, setReportHtml]     = useState(() => getSaved().reportHtml || null);
+  const [attachedFile, setAttachedFile] = useState(null);
   const textareaRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     localStorage.setItem(`agent_state_${systemId}`, JSON.stringify({ activeAction, message, phase, readingStep, result, applied, reportHtml }));
@@ -50,7 +52,7 @@ function AgentPanel({ systemId, systemName, systemData, onClose, onOpenReport, s
 
   const handleRun = async () => {
     const msg = message.trim() || (activeAction && DEFAULT_PROMPTS[activeAction]) || '';
-    if (!msg) return;
+    if (!msg && !attachedFile) return;
 
     setPhase('reading');
     setResult(null);
@@ -65,14 +67,34 @@ function AgentPanel({ systemId, systemName, systemData, onClose, onOpenReport, s
     }
 
     try {
-      const data = await api.runAgent(systemId, msg, activeAction || 'analyze');
-      if (data.error) {
-        setResult({ error: data.error });
+      const res = await api.runAgent(systemId, msg, activeAction || 'chat', attachedFile);
+      if (res.success) {
+        let text = res.response || '';
+        let acts = res.suggested_actions || [];
+        let reportData = null;
+
+        if (text.includes('```html')) {
+          const match = text.match(/```html([\s\S]*?)```/);
+          if (match) {
+            reportData = match[1].trim();
+            text = text.replace(/```html[\s\S]*?```/, '').trim();
+          }
+        }
+
+        setResult({
+          text,
+          findings: res.findings || [],
+          proposed_actions: acts,
+          summary: res.summary || '',
+          suggestions: res.suggestions || []
+        });
+        setReportHtml(reportData);
+        setAttachedFile(null);
+        setPhase('result');
       } else {
-        setResult(data);
-        if (data.report_html) setReportHtml(data.report_html);
+        setResult({ error: res.error || 'Agent failed' });
+        setPhase('result');
       }
-      setPhase('result');
     } catch (err) {
       setResult({ error: err.message || 'Failed to reach agent' });
       setPhase('result');
@@ -99,13 +121,26 @@ function AgentPanel({ systemId, systemName, systemData, onClose, onOpenReport, s
   };
 
   const handleClear = () => {
+    setActiveAction(null);
+    setMessage('');
     setPhase('idle');
     setResult(null);
     setApplied([]);
     setReportHtml(null);
-    setMessage('');
-    setActiveAction(null);
+    setAttachedFile(null);
     setReadingStep(0);
+    localStorage.removeItem(`agent_state_${systemId}`);
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setAttachedFile({ name: file.name, type: file.type, data: ev.target.result });
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   return (
@@ -304,7 +339,14 @@ function AgentPanel({ systemId, systemName, systemData, onClose, onOpenReport, s
               Clear & start over
             </button>
           )}
-          <div style={{background:'#111', border:'1px solid #1e1e1e', borderRadius:'14px', overflow:'hidden'}}>
+            {attachedFile && (
+              <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 14px', background:'#1a1a2e', borderBottom:'1px solid #161616', color:'#a5b4fc', fontSize:'12px'}}>
+                <div style={{display:'flex', alignItems:'center', gap:'6px'}}>
+                  <span>📎</span> <span>{attachedFile.name}</span>
+                </div>
+                <button onClick={() => setAttachedFile(null)} style={{background:'none', border:'none', color:'#a5b4fc', cursor:'pointer', padding:'2px 6px'}}>✕</button>
+              </div>
+            )}
             <textarea ref={textareaRef} value={message} onChange={e => setMessage(e.target.value)}
               onKeyDown={e => { if(e.key==='Enter' && (e.ctrlKey||e.metaKey)) handleRun(); }}
               placeholder="What do you want the agent to do?"
@@ -316,14 +358,21 @@ function AgentPanel({ systemId, systemName, systemData, onClose, onOpenReport, s
             <div style={{display:'flex', alignItems:'center', justifyContent:'space-between',
               padding:'8px 14px', borderTop:'1px solid #161616'}}>
               <span style={{color:'#2a2a2a', fontSize:'11px'}}>Ctrl+Enter to run</span>
-              <button onClick={handleRun} disabled={phase==='reading'||phase==='applying'||!message.trim()}
-                style={{background: (phase==='reading'||phase==='applying'||!message.trim()) ? '#1a1a1a' : 'linear-gradient(135deg,#6366f1,#8b5cf6)',
-                  border:'none', borderRadius:'8px',
-                  color: (phase==='reading'||phase==='applying'||!message.trim()) ? '#333' : '#fff',
-                  padding:'7px 18px', fontSize:'13px', fontWeight:'700',
-                  cursor: (phase==='reading'||phase==='applying'||!message.trim()) ? 'not-allowed' : 'pointer'}}>
-                {phase==='reading'||phase==='applying' ? '...' : 'Run ▶'}
-              </button>
+              <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                <input type="file" ref={fileInputRef} style={{display:'none'}} onChange={handleFileChange} />
+                <button onClick={() => fileInputRef.current?.click()} disabled={phase==='reading'||phase==='applying'}
+                  style={{background:'transparent', border:'1px solid #333', color:'#888', borderRadius:'8px', padding:'6px 10px', cursor:'pointer', fontSize:'14px', display:'flex', alignItems:'center', justifyContent:'center'}} title="Attach File">
+                  📎
+                </button>
+                <button onClick={handleRun} disabled={phase==='reading'||phase==='applying'||(!message.trim() && !attachedFile)}
+                  style={{background: (phase==='reading'||phase==='applying'||(!message.trim() && !attachedFile)) ? '#1a1a1a' : 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                    border:'none', borderRadius:'8px',
+                    color: (phase==='reading'||phase==='applying'||(!message.trim() && !attachedFile)) ? '#333' : '#fff',
+                    padding:'7px 18px', fontSize:'13px', fontWeight:'700',
+                    cursor: (phase==='reading'||phase==='applying'||(!message.trim() && !attachedFile)) ? 'not-allowed' : 'pointer'}}>
+                  {phase==='reading'||phase==='applying' ? '...' : 'Run ▶'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
