@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { api } from '../services/api';
 
 const QUICK_ACTIONS = [
@@ -28,14 +28,19 @@ const READING_STEPS = [
 ];
 
 function AgentPanel({ systemId, systemName, systemData, onClose, onOpenReport, showToast }) {
-  const [activeAction, setActiveAction] = useState(null);
-  const [message, setMessage]           = useState('');
-  const [phase, setPhase]               = useState('idle'); // idle | reading | result | applying | done
-  const [readingStep, setReadingStep]   = useState(0);
-  const [result, setResult]             = useState(null);
-  const [applied, setApplied]           = useState([]);
-  const [reportHtml, setReportHtml]     = useState(null);
+  const getSaved = () => { try { return JSON.parse(localStorage.getItem(`agent_state_${systemId}`)) || {}; } catch { return {}; } };
+  const [activeAction, setActiveAction] = useState(() => getSaved().activeAction || null);
+  const [message, setMessage]           = useState(() => getSaved().message || '');
+  const [phase, setPhase]               = useState(() => getSaved().phase || 'idle'); // idle | reading | result | applying | done
+  const [readingStep, setReadingStep]   = useState(() => getSaved().readingStep || 0);
+  const [result, setResult]             = useState(() => getSaved().result || null);
+  const [applied, setApplied]           = useState(() => getSaved().applied || []);
+  const [reportHtml, setReportHtml]     = useState(() => getSaved().reportHtml || null);
   const textareaRef = useRef(null);
+
+  useEffect(() => {
+    localStorage.setItem(`agent_state_${systemId}`, JSON.stringify({ activeAction, message, phase, readingStep, result, applied, reportHtml }));
+  }, [activeAction, message, phase, readingStep, result, applied, reportHtml, systemId]);
 
   const handleActionClick = (action) => {
     setActiveAction(action.key);

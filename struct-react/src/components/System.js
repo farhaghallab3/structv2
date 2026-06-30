@@ -150,9 +150,17 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
   const [editingHeader, setEditingHeader] = useState(null);
   const [headerValue, setHeaderValue] = useState('');
   const [showAgent, setShowAgent] = useState(false);
-  const [currentSystemView, setCurrentSystemView] = useState('table');
-  const [reportHtmlContent, setReportHtmlContent] = useState(null);
-  const [reportTitle, setReportTitle] = useState('');
+  const [currentSystemView, setCurrentSystemView] = useState(() => localStorage.getItem(`sys_view_${systemData.id}`) || 'table');
+  const [reportHtmlContent, setReportHtmlContent] = useState(() => localStorage.getItem(`report_${systemData.id}`) || null);
+  const [reportTitle, setReportTitle] = useState(() => localStorage.getItem(`report_title_${systemData.id}`) || '');
+
+  useEffect(() => {
+    localStorage.setItem(`sys_view_${systemData.id}`, currentSystemView);
+    if (reportHtmlContent) localStorage.setItem(`report_${systemData.id}`, reportHtmlContent);
+    else localStorage.removeItem(`report_${systemData.id}`);
+    if (reportTitle) localStorage.setItem(`report_title_${systemData.id}`, reportTitle);
+    else localStorage.removeItem(`report_title_${systemData.id}`);
+  }, [currentSystemView, reportHtmlContent, reportTitle, systemData.id]);
 
   const activeTable = systemData.allTables?.[activeTableIdx] || systemData.allTables?.[0];
   const tableId = activeTable?.id || systemData.tableId;
