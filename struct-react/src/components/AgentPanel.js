@@ -27,7 +27,7 @@ const READING_STEPS = [
   'Analyzing Structure...',
 ];
 
-function AgentPanel({ systemId, systemName, systemData, onClose, onOpenReport, showToast }) {
+function AgentPanel({ systemId, systemName, systemData, onClose, onOpenReport, showToast, onRefresh }) {
   const getSaved = () => { try { return JSON.parse(localStorage.getItem(`agent_state_${systemId}`)) || {}; } catch { return {}; } };
   const [activeAction, setActiveAction] = useState(() => getSaved().activeAction || null);
   const [message, setMessage]           = useState(() => getSaved().message || '');
@@ -87,6 +87,7 @@ function AgentPanel({ systemId, systemName, systemData, onClose, onOpenReport, s
       setApplied(res.executed || []);
       setPhase('done');
       showToast('Actions applied successfully');
+      if (onRefresh) onRefresh();
     } catch (err) {
       showToast('Failed to apply actions');
       setPhase('result');

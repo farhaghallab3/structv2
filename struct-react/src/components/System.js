@@ -128,7 +128,7 @@ function renderCell(cell, header) {
   return cell;
 }
 
-function System({ systemName, systemData, workspaceName, onBack, onOpenModal, onShowDrawer, showToast }) {
+function System({ systemName, systemData, workspaceName, onBack, onOpenModal, onShowDrawer, showToast, onRefresh }) {
   const isViewOnly = systemData.userRole === 'view';
   const [activeTableIdx, setActiveTableIdx] = useState(0);
   const [kpiConfigs, setKpiConfigs] = useState(null);
@@ -808,6 +808,7 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
           systemName={systemName}
           onClose={() => setShowAgent(false)}
           showToast={showToast}
+          onRefresh={onRefresh}
           onOpenReport={(html, title) => {
             setReportHtmlContent(html);
             setReportTitle(title);

@@ -184,6 +184,7 @@ function Dashboard({ user, onLogout }) {
             onOpenModal={openModal}
             onShowDrawer={(content) => { setDrawerContent(content); setShowDrawer(true); }}
             showToast={showToast}
+            onRefresh={loadDashboard}
           />
         )}
 
