@@ -816,6 +816,29 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
           }}
         />
       )}
+
+      {showColConfig && (
+        <div style={{position:'fixed', top:0, left:0, width:'100%', height:'100%', background:'rgba(0,0,0,0.8)', zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center'}}>
+          <div style={{background:'#161616', border:'1px solid #2a2a2a', borderRadius:'16px', width:'400px', overflow:'hidden', boxShadow:'0 20px 40px rgba(0,0,0,0.5)'}}>
+            <div style={{padding:'20px 24px', borderBottom:'1px solid #2a2a2a', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+              <h3 style={{margin:0, color:'#fff', fontSize:'16px'}}>{configColIdx === null ? 'Add Column' : 'Edit Column'}</h3>
+              <button onClick={() => setShowColConfig(false)} style={{background:'none', border:'none', color:'#888', cursor:'pointer', fontSize:'20px'}}>&times;</button>
+            </div>
+            <div style={{padding:'24px'}}>
+              <div style={{marginBottom:'20px'}}>
+                <div style={{color:'#888', fontSize:'12px', marginBottom:'8px'}}>Column Name</div>
+                <input autoFocus value={configColName} onChange={e => setConfigColName(e.target.value)}
+                  onKeyDown={e => { if(e.key === 'Enter') saveColConfig(); }}
+                  style={{width:'100%', background:'#0a0a0a', border:'1px solid #2a2a2a', color:'#fff', padding:'10px 14px', borderRadius:'8px', fontSize:'14px', outline:'none', boxSizing:'border-box'}} />
+              </div>
+              <button onClick={saveColConfig}
+                style={{width:'100%', background:'#fff', color:'#000', border:'none', padding:'12px', borderRadius:'8px', fontSize:'14px', fontWeight:'700', cursor:'pointer'}}>
+                {configColIdx === null ? 'Add Column' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
