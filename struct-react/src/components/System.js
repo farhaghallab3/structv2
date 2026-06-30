@@ -773,6 +773,7 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
           systemId={systemData.id}
           systemName={systemName}
           onClose={() => setShowAgent(false)}
+          showToast={showToast}
         />
       )}
     </section>
