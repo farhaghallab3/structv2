@@ -150,6 +150,9 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
   const [editingHeader, setEditingHeader] = useState(null);
   const [headerValue, setHeaderValue] = useState('');
   const [showAgent, setShowAgent] = useState(false);
+  const [currentSystemView, setCurrentSystemView] = useState('table');
+  const [reportHtmlContent, setReportHtmlContent] = useState(null);
+  const [reportTitle, setReportTitle] = useState('');
 
   const activeTable = systemData.allTables?.[activeTableIdx] || systemData.allTables?.[0];
   const tableId = activeTable?.id || systemData.tableId;
@@ -384,8 +387,10 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
         <div className="system-actions-row" style={{display:'flex', gap:'10px', alignItems:'center'}}>
           <button onClick={() => onOpenModal('Share Access', 'Invite people to this workspace.', '__INVITE__')}
             style={{background:'#111', color:'#ccc', border:'1px solid #2a2a2a', padding:'10px 18px', borderRadius:'8px', cursor:'pointer', fontSize:'13px'}}>Share</button>
-          <button onClick={() => showToast('Reports coming soon')}
-            style={{background:'#111', color:'#ccc', border:'1px solid #2a2a2a', padding:'10px 18px', borderRadius:'8px', cursor:'pointer', fontSize:'13px'}}>Reports</button>
+          <button onClick={() => setCurrentSystemView(v => v === 'table' ? 'report' : 'table')}
+            style={{background: currentSystemView === 'report' ? '#fff' : '#111', color: currentSystemView === 'report' ? '#000' : '#ccc', border:'1px solid #2a2a2a', padding:'10px 18px', borderRadius:'8px', cursor:'pointer', fontSize:'13px', fontWeight: currentSystemView === 'report' ? '700' : '400'}}>
+            {currentSystemView === 'report' ? 'Back to Table' : 'Reports'}
+          </button>
           <button onClick={() => showToast('Export coming soon')}
             style={{background:'#111', color:'#ccc', border:'1px solid #2a2a2a', padding:'10px 18px', borderRadius:'8px', cursor:'pointer', fontSize:'13px'}}>Export</button>
           <button onClick={openNewRecord}
@@ -405,6 +410,8 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
         </div>
       </div>
 
+      {currentSystemView === 'table' && (
+        <>
       <div className="table-tabs" style={{display:'flex', gap:'8px', marginBottom:'24px', overflowX:'auto', paddingBottom:'4px'}}>
         {systemData.allTables?.map((t, idx) => (
           <button key={t.id || idx} onClick={() => setActiveTableIdx(idx)}
@@ -768,6 +775,25 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
           </div>
         </div>
       )}
+        </>
+      )}
+
+      {currentSystemView === 'report' && (
+        <div style={{background:'#111', padding:'40px', borderRadius:'16px', minHeight:'500px'}}>
+          {reportHtmlContent ? (
+            <div className="report-content" dangerouslySetInnerHTML={{ __html: reportHtmlContent }} style={{lineHeight: '1.6', color:'#ddd'}} />
+          ) : (
+            <div style={{textAlign:'center', color:'#888', paddingTop:'80px'}}>
+              <h2 style={{color:'#eee', marginBottom:'16px'}}>No Report Generated Yet</h2>
+              <p style={{marginBottom:'24px'}}>Use the Struct Agent to analyze this system and generate a comprehensive report.</p>
+              <button onClick={() => setShowAgent(true)} style={{background:'linear-gradient(135deg, #6366f1, #8b5cf6)', color:'#fff', border:'none', padding:'12px 24px', borderRadius:'8px', cursor:'pointer', fontSize:'14px', fontWeight:'700'}}>
+                ✦ Open Agent
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {showAgent && (
         <AgentPanel
           systemId={systemData.id}
@@ -775,12 +801,10 @@ function System({ systemName, systemData, workspaceName, onBack, onOpenModal, on
           onClose={() => setShowAgent(false)}
           showToast={showToast}
           onOpenReport={(html, title) => {
-            onShowDrawer(
-              <div style={{padding: '30px', color: '#111'}}>
-                <h2 style={{borderBottom: '1px solid #eee', paddingBottom: '16px', marginBottom: '24px'}}>{title} Report</h2>
-                <div className="report-content" dangerouslySetInnerHTML={{ __html: html }} style={{lineHeight: '1.6'}} />
-              </div>
-            );
+            setReportHtmlContent(html);
+            setReportTitle(title);
+            setCurrentSystemView('report');
+            setShowAgent(false);
           }}
         />
       )}
