@@ -151,8 +151,8 @@ function AgentPanel({ systemId, systemName, systemData, onClose, onOpenReport, s
 
   return (
     <div style={{position:'fixed', inset:0, zIndex:9999, display:'flex', alignItems:'stretch', justifyContent:'flex-end', pointerEvents:'none'}}>
-      <div style={{pointerEvents:'all', width:'min(480px,100vw)', height:'100vh', background:'#0c0c0c',
-        borderLeft:'1px solid #1e1e1e', display:'flex', flexDirection:'column',
+      <div style={{pointerEvents:'all', width:'min(480px,100vw)', height:'100dvh', maxHeight:'-webkit-fill-available', background:'#0c0c0c',
+        borderLeft:'1px solid #1e1e1e', display:'flex', flexDirection:'column', overflow:'hidden',
         boxShadow:'-24px 0 80px rgba(0,0,0,0.7)'}}>
         <style>{`
           @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
@@ -338,7 +338,7 @@ function AgentPanel({ systemId, systemName, systemData, onClose, onOpenReport, s
         </div>
 
         {/* Input */}
-        <div style={{padding:'16px 20px', borderTop:'1px solid #141414', flexShrink:0, background:'#0c0c0c'}}>
+        <div style={{padding:'16px 20px', paddingBottom:'max(16px, env(safe-area-inset-bottom, 16px))', borderTop:'1px solid #141414', flexShrink:0, background:'#0c0c0c'}}>
           {(phase === 'result' || phase === 'done') && (
             <button onClick={handleClear} style={{background:'transparent', border:'none', color:'#333',
               fontSize:'12px', cursor:'pointer', marginBottom:'10px', textDecoration:'underline'}}>
